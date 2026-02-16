@@ -25,7 +25,8 @@
             { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
             { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
             { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
-            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" }
+            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
+            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" }
         ],
         "repeat": "900",
         "crontab": "",
@@ -41,7 +42,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -157,6 +158,7 @@
             { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
             { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
             { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
+            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" },
             { "p": "historyYear", "v": "2024", "vt": "num" }
         ],
         "repeat": "",
@@ -173,7 +175,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -459,14 +461,14 @@
         "links": [ "link_to_format", "link_historic_to_format" ],
         "x": 105,
         "y": 640,
-        "wires": [[ "format_activity" ]]
+        "wires": [[ "detail_build_request" ]]
     },
     {
-        "id": "format_activity",
+        "id": "detail_build_request",
         "type": "function",
         "z": "strava_obsidian_tab",
-        "name": "Format Activity",
-        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse ISO8601 local time\nconst d = new Date(act.start_date_local);\nconst year = d.getFullYear();\nconst month = String(d.getMonth() + 1).padStart(2, '0');\nconst day = String(d.getDate()).padStart(2, '0');\nconst hours = String(d.getHours()).padStart(2, '0');\nconst minutes = String(d.getMinutes()).padStart(2, '0');\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '🏃', 'Ride': '🚴', 'Swim': '🏊',\n    'Hike': '⛰️', 'Walk': '🚶', 'Yoga': '🧘',\n    'WeightTraining': '🏋️', 'Workout': '🏋️'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '🏃';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Detail line 1: distance, time, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\ndetail1.push('**Time:** ' + timeStr);\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: pace/speed, heart rate\nconst detail2 = [];\nif (paceOrSpeed) detail2.push(paceOrSpeed);\nif (hrStr) detail2.push(hrStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: achievements, kudos\nconst detail3 = [];\nif (act.achievement_count !== undefined) detail3.push('**Achievements:** ' + act.achievement_count);\nif (act.kudos_count !== undefined) detail3.push('**Kudos:** ' + act.kudos_count);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Map link\nif (act.start_latlng && act.start_latlng.length === 2) {\n    const lat = act.start_latlng[0].toFixed(4);\n    const lng = act.start_latlng[1].toFixed(4);\n    lines.push('\\t- [Map](https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=15/' + lat + '/' + lng + ')');\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
+        "name": "Build Detail Request",
+        "func": "const accessToken = flow.get('accessToken', 'file');\nif (!accessToken) {\n    node.warn('No access token available for detail fetch.');\n    return null;\n}\n\nconst actId = msg.payload && msg.payload.id;\nif (!actId) {\n    node.warn('No activity ID in payload.');\n    return null;\n}\n\nmsg.url = 'https://www.strava.com/api/v3/activities/' + actId;\nmsg.headers = { 'Authorization': 'Bearer ' + accessToken };\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -474,6 +476,58 @@
         "finalize": "",
         "libs": [],
         "x": 280,
+        "y": 640,
+        "wires": [[ "detail_http" ]]
+    },
+    {
+        "id": "detail_http",
+        "type": "http request",
+        "z": "strava_obsidian_tab",
+        "name": "Strava Detail API",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 470,
+        "y": 640,
+        "wires": [[ "detail_merge" ]]
+    },
+    {
+        "id": "detail_merge",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Merge Detail",
+        "func": "if (!msg.payload || !msg.payload.id) {\n    node.warn('Detail fetch failed: ' + JSON.stringify(msg.payload));\n    return null;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 640,
+        "wires": [[ "format_activity" ]]
+    },
+    {
+        "id": "format_activity",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Format Activity",
+        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse ISO8601 local time\nconst d = new Date(act.start_date_local);\nconst year = d.getFullYear();\nconst month = String(d.getMonth() + 1).padStart(2, '0');\nconst day = String(d.getDate()).padStart(2, '0');\nconst hours = String(d.getHours()).padStart(2, '0');\nconst minutes = String(d.getMinutes()).padStart(2, '0');\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '🏃', 'Ride': '🚴', 'Swim': '🏊',\n    'Hike': '⛰️', 'Walk': '🚶', 'Yoga': '🧘',\n    'WeightTraining': '🏋️', 'Workout': '🏋️'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '🏃';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Description (from detail endpoint)\nif (act.description && act.description.trim().length > 0) {\n    lines.push('\\t- ' + act.description.trim().replace(/\\n/g, ' '));\n}\n\n// Detail line 1: distance, time, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\ndetail1.push('**Time:** ' + timeStr);\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: pace/speed, heart rate\nconst detail2 = [];\nif (paceOrSpeed) detail2.push(paceOrSpeed);\nif (hrStr) detail2.push(hrStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: achievements, kudos\nconst detail3 = [];\nif (act.achievement_count !== undefined) detail3.push('**Achievements:** ' + act.achievement_count);\nif (act.kudos_count !== undefined) detail3.push('**Kudos:** ' + act.kudos_count);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Map: static image if Google Maps key configured, otherwise OSM link\nconst googleMapsKey = flow.get('googleMapsKey');\nconst polyline = act.map && act.map.summary_polyline;\nif (polyline && googleMapsKey && googleMapsKey !== 'YOUR_GOOGLE_MAPS_KEY') {\n    const encodedPolyline = encodeURIComponent(polyline);\n    lines.push('\\t- ![Map](https://maps.googleapis.com/maps/api/staticmap?size=600x300&path=weight:3%7Ccolor:red%7Cenc:' + encodedPolyline + '&key=' + googleMapsKey + ')');\n} else if (act.start_latlng && act.start_latlng.length === 2) {\n    const lat = act.start_latlng[0].toFixed(4);\n    const lng = act.start_latlng[1].toFixed(4);\n    lines.push('\\t- [Map](https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=15/' + lat + '/' + lng + ')');\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 820,
         "y": 640,
         "wires": [[ "build_filename" ]]
     },
@@ -489,7 +543,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
+        "x": 1010,
         "y": 640,
         "wires": [[ "write_queue" ]]
     },
@@ -510,7 +564,7 @@
         "drop": false,
         "allowrate": false,
         "outputs": 1,
-        "x": 650,
+        "x": 1180,
         "y": 640,
         "wires": [[ "file_read" ]]
     },
@@ -526,8 +580,8 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": true,
-        "x": 820,
-        "y": 640,
+        "x": 280,
+        "y": 700,
         "wires": [[ "insert_into_notes" ]]
     },
     {
@@ -542,8 +596,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1000,
-        "y": 640,
+        "x": 480,
+        "y": 700,
         "wires": [[ "file_write" ]]
     },
     {
@@ -557,8 +611,8 @@
         "createDir": true,
         "overwriteFile": true,
         "encoding": "none",
-        "x": 1190,
-        "y": 640,
+        "x": 660,
+        "y": 700,
         "wires": [[ "write_debug" ]]
     },
     {
@@ -574,8 +628,8 @@
         "targetType": "msg",
         "statusVal": "filename",
         "statusType": "auto",
-        "x": 1380,
-        "y": 640,
+        "x": 850,
+        "y": 700,
         "wires": []
     }
 ]
