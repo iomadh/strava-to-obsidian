@@ -159,7 +159,8 @@
             { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
             { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
             { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" },
-            { "p": "historyYear", "v": "2024", "vt": "num" }
+            { "p": "historyYear", "v": "2024", "vt": "num" },
+            { "p": "replaceMode", "v": "false", "vt": "bool" }
         ],
         "repeat": "",
         "crontab": "",
@@ -175,7 +176,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\nflow.set('replaceMode', msg.replaceMode);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -589,7 +590,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Insert into ## Notes",
-        "func": "const activity = msg.noteupdate;\nlet content = '';\n\nif (typeof msg.payload === 'string' && msg.payload.length > 0) {\n    content = msg.payload;\n} else {\n    content = '';\n}\n\n// Duplicate check: skip if this activity ID is already in the file\nif (msg.activityId && content.indexOf(msg.activityId) !== -1) {\n    node.log('Activity ' + msg.activityId + ' already exists, skipping.');\n    return null;\n}\n\nconst notesHeading = '## Notes';\nconst notesIdx = content.indexOf(notesHeading);\n\nif (notesIdx !== -1) {\n    const afterNotes = content.substring(notesIdx + notesHeading.length);\n    const nextHeadingMatch = afterNotes.match(/\\n## [^#]/);\n    \n    if (nextHeadingMatch) {\n        const insertPos = notesIdx + notesHeading.length + nextHeadingMatch.index;\n        msg.payload = content.substring(0, insertPos) + '\\n' + activity + content.substring(insertPos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + activity + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + activity + '\\n';\n}\n\nreturn msg;",
+        "func": "const activity = msg.noteupdate;\nlet content = '';\n\nif (typeof msg.payload === 'string' && msg.payload.length > 0) {\n    content = msg.payload;\n} else {\n    content = '';\n}\n\nconst replaceMode = flow.get('replaceMode') || false;\n\n// Check if this activity ID already exists in the file\nif (msg.activityId && content.indexOf(msg.activityId) !== -1) {\n    if (!replaceMode) {\n        node.log('Activity ' + msg.activityId + ' already exists, skipping.');\n        return null;\n    }\n    // Replace mode: find full entry block and replace\n    const lines = content.split('\\n');\n    let startIdx = -1;\n    let endIdx = -1;\n    for (let i = 0; i < lines.length; i++) {\n        if (lines[i].indexOf('strava.com/activities/' + msg.activityId) !== -1) {\n            startIdx = i;\n            endIdx = i + 1;\n            // Consume all tab-indented sub-items\n            while (endIdx < lines.length && lines[endIdx].startsWith('\\t')) {\n                endIdx++;\n            }\n            break;\n        }\n    }\n    if (startIdx !== -1) {\n        lines.splice(startIdx, endIdx - startIdx, ...activity.split('\\n'));\n        msg.payload = lines.join('\\n');\n        node.log('Replaced activity ' + msg.activityId);\n        return msg;\n    }\n}\n\nconst notesHeading = '## Notes';\nconst notesIdx = content.indexOf(notesHeading);\n\nif (notesIdx !== -1) {\n    const afterNotes = content.substring(notesIdx + notesHeading.length);\n    const nextHeadingMatch = afterNotes.match(/\\n## [^#]/);\n    \n    if (nextHeadingMatch) {\n        const insertPos = notesIdx + notesHeading.length + nextHeadingMatch.index;\n        msg.payload = content.substring(0, insertPos) + '\\n' + activity + content.substring(insertPos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + activity + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + activity + '\\n';\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
