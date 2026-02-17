@@ -4,13 +4,13 @@
         "type": "tab",
         "label": "Strava → Obsidian",
         "disabled": false,
-        "info": "Bridges Strava activities with Obsidian daily notes.\n\nFlow 1: Active polling for new activities (every 15 min).\nFlow 2: Historic bulk-loading for a given year.\nFlow 3: Nightly update of recent activities (replaces existing entries with fresh data).\n\nConfigure the inject nodes with your Strava credentials and vault path."
+        "info": "Bridges Strava activities with Obsidian daily notes.\n\nFlow 1: Active polling for new activities (every 60 min).\nFlow 2: Historic bulk-loading for a given year (rate-limited to stay within Strava API limits: 100 req/15 min, 1000/day).\nFlow 3: Nightly update of recent activities (replaces existing entries with fresh data).\n\nConfigure the inject nodes with your Strava credentials and vault path."
     },
     {
         "id": "comment_flow1",
         "type": "comment",
         "z": "strava_obsidian_tab",
-        "name": "── Flow 1: Active Polling ──────────────────────────────",
+        "name": "── Flow 1: Active Polling (60 min) ───────────────────────",
         "info": "",
         "x": 280,
         "y": 40,
@@ -20,7 +20,7 @@
         "id": "poll_inject",
         "type": "inject",
         "z": "strava_obsidian_tab",
-        "name": "Poll Every 15 min",
+        "name": "Poll Every 60 min",
         "props": [
             { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
             { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
@@ -28,7 +28,7 @@
             { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
             { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" }
         ],
-        "repeat": "900",
+        "repeat": "3600",
         "crontab": "",
         "once": true,
         "onceDelay": "5",
@@ -116,7 +116,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Parse & Filter",
-        "func": "const items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return null;\n}\n\nif (items.length === 0) {\n    node.log('No new activities found.');\n    return null;\n}\n\nlet maxTs = flow.get('lastTimestamp', 'file') || 0;\nfor (const item of items) {\n    const ts = Math.floor(new Date(item.start_date).getTime() / 1000);\n    if (ts > maxTs) maxTs = ts;\n}\nflow.set('lastTimestamp', maxTs, 'file');\n\nnode.log('Found ' + items.length + ' new activity/activities.');\n\nfor (const item of items) {\n    node.send({ payload: item });\n}\n\nreturn null;",
+        "func": "// Handle rate limit (429)\nif (msg.statusCode === 429) {\n    node.warn('Poll rate limited. Will retry on next poll cycle.');\n    node.status({ fill: 'red', shape: 'ring', text: 'Rate limited' });\n    return null;\n}\n\nconst items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return null;\n}\n\nif (items.length === 0) {\n    node.log('No new activities found.');\n    return null;\n}\n\nlet maxTs = flow.get('lastTimestamp', 'file') || 0;\nfor (const item of items) {\n    const ts = Math.floor(new Date(item.start_date).getTime() / 1000);\n    if (ts > maxTs) maxTs = ts;\n}\nflow.set('lastTimestamp', maxTs, 'file');\n\nnode.log('Found ' + items.length + ' new activity/activities.');\nnode.status({});\n\nfor (const item of items) {\n    node.send({ payload: item });\n}\n\nreturn null;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -266,8 +266,8 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Process Page",
-        "func": "const items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return [null, null, { payload: 'Error at page ' + msg.page }];\n}\n\nif (items.length === 0) {\n    node.log('Historic load complete.');\n    return [null, null, { payload: 'Done. No more activities.' }];\n}\n\nnode.log('Processing ' + items.length + ' activities at page ' + msg.page);\nnode.status({ text: 'Page ' + msg.page + ', got ' + items.length });\n\nfor (const item of items) {\n    node.send([{ payload: item }, null, null]);\n}\n\nif (items.length >= msg.perPage) {\n    const nextMsg = {\n        after: msg.after,\n        before: msg.before,\n        page: msg.page + 1,\n        perPage: msg.perPage,\n        historyYear: msg.historyYear\n    };\n    node.send([null, nextMsg, null]);\n} else {\n    node.log('Historic load complete. Last page: ' + items.length + ' activities.');\n    node.send([null, null, { payload: 'Done. All activities loaded for ' + msg.historyYear }]);\n}\n\nreturn null;",
-        "outputs": 3,
+        "func": "// Handle rate limit (429)\nif (msg.statusCode === 429) {\n    const retryAfter = (msg.headers && msg.headers['retry-after']) || 120;\n    node.warn('Rate limited on page ' + msg.page + '. Retry after ' + retryAfter + 's');\n    node.status({ fill: 'red', shape: 'ring', text: 'Rate limited page ' + msg.page });\n    // Send back to retry via output 4 (preserves page/pagination state)\n    return [null, null, null, msg];\n}\n\nconst items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return [null, null, { payload: 'Error at page ' + msg.page }, null];\n}\n\nif (items.length === 0) {\n    node.log('Historic load complete.');\n    return [null, null, { payload: 'Done. No more activities.' }, null];\n}\n\nnode.log('Processing ' + items.length + ' activities at page ' + msg.page);\nnode.status({ text: 'Page ' + msg.page + ', got ' + items.length });\n\nfor (const item of items) {\n    node.send([{ payload: item }, null, null, null]);\n}\n\nif (items.length >= msg.perPage) {\n    const nextMsg = {\n        after: msg.after,\n        before: msg.before,\n        page: msg.page + 1,\n        perPage: msg.perPage,\n        historyYear: msg.historyYear\n    };\n    node.send([null, nextMsg, null, null]);\n} else {\n    node.log('Historic load complete. Last page: ' + items.length + ' activities.');\n    node.send([null, null, { payload: 'Done. All activities loaded for ' + msg.historyYear }, null]);\n}\n\nreturn null;",
+        "outputs": 4,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
@@ -278,9 +278,10 @@
         "wires": [
             [ "link_historic_to_format" ],
             [ "historic_delay" ],
-            [ "historic_status" ]
+            [ "historic_status" ],
+            [ "historic_retry_delay" ]
         ],
-        "outputLabels": [ "activities", "next page", "done/error" ]
+        "outputLabels": [ "activities", "next page", "done/error", "rate limited" ]
     },
     {
         "id": "link_historic_to_format",
@@ -330,6 +331,27 @@
         "x": 1320,
         "y": 340,
         "wires": []
+    },
+    {
+        "id": "historic_retry_delay",
+        "type": "delay",
+        "z": "strava_obsidian_tab",
+        "name": "429 Retry (2 min)",
+        "pauseType": "delay",
+        "timeout": "120",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1320,
+        "y": 380,
+        "wires": [[ "historic_build_request" ]]
     },
     {
         "id": "comment_nightly",
@@ -458,8 +480,8 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Process Page",
-        "func": "const items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return [null, null, { payload: 'Nightly error at page ' + msg.page }];\n}\n\nif (items.length === 0) {\n    node.log('Nightly update complete.');\n    return [null, null, { payload: 'Nightly done. No more activities.' }];\n}\n\nnode.log('Nightly processing ' + items.length + ' activities at page ' + msg.page);\nnode.status({ text: 'Page ' + msg.page + ', got ' + items.length });\n\nfor (const item of items) {\n    node.send([{ payload: item }, null, null]);\n}\n\nif (items.length >= msg.perPage) {\n    const nextMsg = {\n        after: msg.after,\n        page: msg.page + 1,\n        perPage: msg.perPage\n    };\n    node.send([null, nextMsg, null]);\n} else {\n    node.log('Nightly update complete. Last page: ' + items.length + ' activities.');\n    node.send([null, null, { payload: 'Nightly done. All recent activities updated.' }]);\n}\n\nreturn null;",
-        "outputs": 3,
+        "func": "// Handle rate limit (429)\nif (msg.statusCode === 429) {\n    const retryAfter = (msg.headers && msg.headers['retry-after']) || 120;\n    node.warn('Nightly rate limited on page ' + msg.page + '. Retry after ' + retryAfter + 's');\n    node.status({ fill: 'red', shape: 'ring', text: 'Rate limited page ' + msg.page });\n    return [null, null, null, msg];\n}\n\nconst items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return [null, null, { payload: 'Nightly error at page ' + msg.page }, null];\n}\n\nif (items.length === 0) {\n    node.log('Nightly update complete.');\n    return [null, null, { payload: 'Nightly done. No more activities.' }, null];\n}\n\nnode.log('Nightly processing ' + items.length + ' activities at page ' + msg.page);\nnode.status({ text: 'Page ' + msg.page + ', got ' + items.length });\n\nfor (const item of items) {\n    node.send([{ payload: item }, null, null, null]);\n}\n\nif (items.length >= msg.perPage) {\n    const nextMsg = {\n        after: msg.after,\n        page: msg.page + 1,\n        perPage: msg.perPage\n    };\n    node.send([null, nextMsg, null, null]);\n} else {\n    node.log('Nightly update complete. Last page: ' + items.length + ' activities.');\n    node.send([null, null, { payload: 'Nightly done. All recent activities updated.' }, null]);\n}\n\nreturn null;",
+        "outputs": 4,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
@@ -470,9 +492,10 @@
         "wires": [
             [ "link_nightly_to_format" ],
             [ "nightly_delay" ],
-            [ "nightly_status" ]
+            [ "nightly_status" ],
+            [ "nightly_retry_delay" ]
         ],
-        "outputLabels": [ "activities", "next page", "done/error" ]
+        "outputLabels": [ "activities", "next page", "done/error", "rate limited" ]
     },
     {
         "id": "link_nightly_to_format",
@@ -522,6 +545,27 @@
         "x": 1320,
         "y": 540,
         "wires": []
+    },
+    {
+        "id": "nightly_retry_delay",
+        "type": "delay",
+        "z": "strava_obsidian_tab",
+        "name": "429 Retry (2 min)",
+        "pauseType": "delay",
+        "timeout": "120",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1320,
+        "y": 580,
+        "wires": [[ "nightly_build_request" ]]
     },
     {
         "id": "comment_refresh",
@@ -666,6 +710,27 @@
         "links": [ "link_to_format", "link_historic_to_format", "link_nightly_to_format" ],
         "x": 105,
         "y": 840,
+        "wires": [[ "api_rate_queue" ]]
+    },
+    {
+        "id": "api_rate_queue",
+        "type": "delay",
+        "z": "strava_obsidian_tab",
+        "name": "API Rate (6/min)",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "6",
+        "nbRateUnits": "1",
+        "rateUnits": "minute",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 170,
+        "y": 870,
         "wires": [[ "detail_build_request" ]]
     },
     {
@@ -709,8 +774,8 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Merge Detail",
-        "func": "if (!msg.payload || !msg.payload.id) {\n    node.warn('Detail fetch failed: ' + JSON.stringify(msg.payload));\n    return null;\n}\n\nreturn msg;",
-        "outputs": 1,
+        "func": "// Handle rate limit (429)\nif (msg.statusCode === 429) {\n    const retryAfter = (msg.headers && msg.headers['retry-after']) || 120;\n    node.warn('Rate limited on detail fetch. Retry after ' + retryAfter + 's');\n    node.status({ fill: 'red', shape: 'ring', text: 'Rate limited - retrying' });\n    msg._retryDelay = Number(retryAfter) * 1000;\n    return [null, msg];\n}\n\nif (!msg.payload || !msg.payload.id) {\n    node.warn('Detail fetch failed: ' + JSON.stringify(msg.payload));\n    return null;\n}\n\nnode.status({});\nreturn [msg, null];",
+        "outputs": 2,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
@@ -718,7 +783,29 @@
         "libs": [],
         "x": 640,
         "y": 840,
-        "wires": [[ "format_activity" ]]
+        "wires": [[ "format_activity" ], [ "detail_retry_delay" ]],
+        "outputLabels": [ "ok", "rate limited" ]
+    },
+    {
+        "id": "detail_retry_delay",
+        "type": "delay",
+        "z": "strava_obsidian_tab",
+        "name": "429 Retry (2 min)",
+        "pauseType": "delay",
+        "timeout": "120",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 640,
+        "y": 870,
+        "wires": [[ "detail_build_request" ]]
     },
     {
         "id": "format_activity",
