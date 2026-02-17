@@ -4,7 +4,7 @@
         "type": "tab",
         "label": "Strava → Obsidian",
         "disabled": false,
-        "info": "Bridges Strava activities with Obsidian daily notes.\n\nFlow 1: Active polling for new activities (every 15 min).\nFlow 2: Historic bulk-loading for a given year.\n\nConfigure the inject nodes with your Strava credentials and vault path."
+        "info": "Bridges Strava activities with Obsidian daily notes.\n\nFlow 1: Active polling for new activities (every 15 min).\nFlow 2: Historic bulk-loading for a given year.\nFlow 3: Nightly update of recent activities (replaces existing entries with fresh data).\n\nConfigure the inject nodes with your Strava credentials and vault path."
     },
     {
         "id": "comment_flow1",
@@ -42,7 +42,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\nflow.set('replaceMode', false);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -332,13 +332,205 @@
         "wires": []
     },
     {
+        "id": "comment_nightly",
+        "type": "comment",
+        "z": "strava_obsidian_tab",
+        "name": "── Flow 3: Nightly Update ──────────────────────────────",
+        "info": "",
+        "x": 280,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "nightly_inject",
+        "type": "inject",
+        "z": "strava_obsidian_tab",
+        "name": "Nightly Update (2 AM)",
+        "props": [
+            { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
+            { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
+            { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
+            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
+            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" },
+            { "p": "lookbackDays", "v": "7", "vt": "num" }
+        ],
+        "repeat": "",
+        "crontab": "0 2 * * *",
+        "once": false,
+        "onceDelay": "",
+        "topic": "",
+        "x": 160,
+        "y": 480,
+        "wires": [[ "nightly_check_token" ]]
+    },
+    {
+        "id": "nightly_check_token",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Check Token",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('googleMapsKey', msg.googleMapsKey);\nflow.set('replaceMode', true);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'nightly';\nmsg.lookbackDays = msg.lookbackDays || 7;\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 480,
+        "wires": [[ "nightly_init" ], [ "link_nightly_to_refresh" ]],
+        "outputLabels": ["valid", "expired"]
+    },
+    {
+        "id": "link_nightly_to_refresh",
+        "type": "link out",
+        "z": "strava_obsidian_tab",
+        "name": "→ Token Refresh",
+        "mode": "link",
+        "links": [ "link_refresh_in" ],
+        "x": 535,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "link_refresh_to_nightly",
+        "type": "link in",
+        "z": "strava_obsidian_tab",
+        "name": "← Refresh (nightly)",
+        "links": [ "link_refresh_out_nightly" ],
+        "x": 365,
+        "y": 540,
+        "wires": [[ "nightly_init" ]]
+    },
+    {
+        "id": "nightly_init",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Init Pagination",
+        "func": "const lookbackDays = msg.lookbackDays || 7;\nconst now = Math.floor(Date.now() / 1000);\nconst after = now - (lookbackDays * 86400);\n\nmsg.after = after;\nmsg.page = 1;\nmsg.perPage = 200;\n\nnode.log('Nightly update: fetching activities from last ' + lookbackDays + ' days');\nnode.status({ text: 'Lookback ' + lookbackDays + ' days' });\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 480,
+        "wires": [[ "nightly_build_request" ]]
+    },
+    {
+        "id": "nightly_build_request",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Build API Request",
+        "func": "const accessToken = flow.get('accessToken', 'file');\nif (!accessToken) {\n    node.warn('No access token available.');\n    return null;\n}\n\nmsg.url = 'https://www.strava.com/api/v3/athlete/activities'\n    + '?after=' + msg.after\n    + '&page=' + msg.page\n    + '&per_page=' + msg.perPage;\n\nmsg.headers = { 'Authorization': 'Bearer ' + accessToken };\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 480,
+        "wires": [[ "nightly_http" ]]
+    },
+    {
+        "id": "nightly_http",
+        "type": "http request",
+        "z": "strava_obsidian_tab",
+        "name": "Strava API",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 950,
+        "y": 480,
+        "wires": [[ "nightly_process" ]]
+    },
+    {
+        "id": "nightly_process",
+        "type": "function",
+        "z": "strava_obsidian_tab",
+        "name": "Process Page",
+        "func": "const items = msg.payload;\nif (!Array.isArray(items)) {\n    node.warn('Unexpected API response: ' + JSON.stringify(msg.payload));\n    return [null, null, { payload: 'Nightly error at page ' + msg.page }];\n}\n\nif (items.length === 0) {\n    node.log('Nightly update complete.');\n    return [null, null, { payload: 'Nightly done. No more activities.' }];\n}\n\nnode.log('Nightly processing ' + items.length + ' activities at page ' + msg.page);\nnode.status({ text: 'Page ' + msg.page + ', got ' + items.length });\n\nfor (const item of items) {\n    node.send([{ payload: item }, null, null]);\n}\n\nif (items.length >= msg.perPage) {\n    const nextMsg = {\n        after: msg.after,\n        page: msg.page + 1,\n        perPage: msg.perPage\n    };\n    node.send([null, nextMsg, null]);\n} else {\n    node.log('Nightly update complete. Last page: ' + items.length + ' activities.');\n    node.send([null, null, { payload: 'Nightly done. All recent activities updated.' }]);\n}\n\nreturn null;",
+        "outputs": 3,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1130,
+        "y": 480,
+        "wires": [
+            [ "link_nightly_to_format" ],
+            [ "nightly_delay" ],
+            [ "nightly_status" ]
+        ],
+        "outputLabels": [ "activities", "next page", "done/error" ]
+    },
+    {
+        "id": "link_nightly_to_format",
+        "type": "link out",
+        "z": "strava_obsidian_tab",
+        "name": "→ Format Chain",
+        "mode": "link",
+        "links": [ "link_from_flows" ],
+        "x": 1275,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "nightly_delay",
+        "type": "delay",
+        "z": "strava_obsidian_tab",
+        "name": "Rate Limit (1s)",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "4",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1140,
+        "y": 540,
+        "wires": [[ "nightly_build_request" ]]
+    },
+    {
+        "id": "nightly_status",
+        "type": "debug",
+        "z": "strava_obsidian_tab",
+        "name": "Nightly Status",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1320,
+        "y": 540,
+        "wires": []
+    },
+    {
         "id": "comment_refresh",
         "type": "comment",
         "z": "strava_obsidian_tab",
         "name": "── Token Refresh Sub-chain ──────────────────────────────",
         "info": "",
         "x": 290,
-        "y": 420,
+        "y": 620,
         "wires": []
     },
     {
@@ -346,9 +538,9 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← Needs Refresh",
-        "links": [ "link_poll_to_refresh", "link_historic_to_refresh" ],
+        "links": [ "link_poll_to_refresh", "link_historic_to_refresh", "link_nightly_to_refresh" ],
         "x": 105,
-        "y": 480,
+        "y": 680,
         "wires": [[ "build_refresh_request" ]]
     },
     {
@@ -364,7 +556,7 @@
         "finalize": "",
         "libs": [],
         "x": 300,
-        "y": 480,
+        "y": 680,
         "wires": [[ "refresh_http" ]]
     },
     {
@@ -384,7 +576,7 @@
         "senderr": false,
         "headers": [],
         "x": 510,
-        "y": 480,
+        "y": 680,
         "wires": [[ "store_tokens" ]]
     },
     {
@@ -400,7 +592,7 @@
         "finalize": "",
         "libs": [],
         "x": 690,
-        "y": 480,
+        "y": 680,
         "wires": [[ "refresh_route" ]]
     },
     {
@@ -412,15 +604,16 @@
         "propertyType": "msg",
         "rules": [
             { "t": "eq", "v": "poll", "vt": "str" },
-            { "t": "eq", "v": "historic", "vt": "str" }
+            { "t": "eq", "v": "historic", "vt": "str" },
+            { "t": "eq", "v": "nightly", "vt": "str" }
         ],
         "checkall": false,
         "repair": false,
-        "outputs": 2,
+        "outputs": 3,
         "x": 870,
-        "y": 480,
-        "wires": [[ "link_refresh_out_poll" ], [ "link_refresh_out_historic" ]],
-        "outputLabels": [ "poll", "historic" ]
+        "y": 680,
+        "wires": [[ "link_refresh_out_poll" ], [ "link_refresh_out_historic" ], [ "link_refresh_out_nightly" ]],
+        "outputLabels": [ "poll", "historic", "nightly" ]
     },
     {
         "id": "link_refresh_out_poll",
@@ -430,7 +623,7 @@
         "mode": "link",
         "links": [ "link_refresh_to_poll" ],
         "x": 1035,
-        "y": 460,
+        "y": 660,
         "wires": []
     },
     {
@@ -441,7 +634,18 @@
         "mode": "link",
         "links": [ "link_refresh_to_historic" ],
         "x": 1035,
-        "y": 500,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "link_refresh_out_nightly",
+        "type": "link out",
+        "z": "strava_obsidian_tab",
+        "name": "→ Nightly (refreshed)",
+        "mode": "link",
+        "links": [ "link_refresh_to_nightly" ],
+        "x": 1035,
+        "y": 740,
         "wires": []
     },
     {
@@ -451,7 +655,7 @@
         "name": "── Shared: Format & Write Chain ─────────────────────────",
         "info": "",
         "x": 290,
-        "y": 580,
+        "y": 780,
         "wires": []
     },
     {
@@ -459,9 +663,9 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← From Flows",
-        "links": [ "link_to_format", "link_historic_to_format" ],
+        "links": [ "link_to_format", "link_historic_to_format", "link_nightly_to_format" ],
         "x": 105,
-        "y": 640,
+        "y": 840,
         "wires": [[ "detail_build_request" ]]
     },
     {
@@ -477,7 +681,7 @@
         "finalize": "",
         "libs": [],
         "x": 280,
-        "y": 640,
+        "y": 840,
         "wires": [[ "detail_http" ]]
     },
     {
@@ -497,7 +701,7 @@
         "senderr": false,
         "headers": [],
         "x": 470,
-        "y": 640,
+        "y": 840,
         "wires": [[ "detail_merge" ]]
     },
     {
@@ -513,7 +717,7 @@
         "finalize": "",
         "libs": [],
         "x": 640,
-        "y": 640,
+        "y": 840,
         "wires": [[ "format_activity" ]]
     },
     {
@@ -529,7 +733,7 @@
         "finalize": "",
         "libs": [],
         "x": 820,
-        "y": 640,
+        "y": 840,
         "wires": [[ "build_filename" ]]
     },
     {
@@ -545,7 +749,7 @@
         "finalize": "",
         "libs": [],
         "x": 1010,
-        "y": 640,
+        "y": 840,
         "wires": [[ "write_queue" ]]
     },
     {
@@ -566,7 +770,7 @@
         "allowrate": false,
         "outputs": 1,
         "x": 1180,
-        "y": 640,
+        "y": 840,
         "wires": [[ "file_read" ]]
     },
     {
@@ -582,7 +786,7 @@
         "encoding": "utf8",
         "allProps": true,
         "x": 280,
-        "y": 700,
+        "y": 900,
         "wires": [[ "insert_into_notes" ]]
     },
     {
@@ -598,7 +802,7 @@
         "finalize": "",
         "libs": [],
         "x": 480,
-        "y": 700,
+        "y": 900,
         "wires": [[ "file_write" ]]
     },
     {
@@ -613,7 +817,7 @@
         "overwriteFile": true,
         "encoding": "none",
         "x": 660,
-        "y": 700,
+        "y": 900,
         "wires": [[ "write_debug" ]]
     },
     {
@@ -630,7 +834,7 @@
         "statusVal": "filename",
         "statusType": "auto",
         "x": 850,
-        "y": 700,
+        "y": 900,
         "wires": []
     }
 ]
