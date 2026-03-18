@@ -1,1 +1,4 @@
-
+node_modules/
+garmin.credentials.json
+*.session.json
+garmin-tokens/

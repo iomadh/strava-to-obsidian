@@ -1,0 +1,12 @@
+{
+  "name": "garmin-obsidian",
+  "version": "1.0.0",
+  "description": "Fetch Garmin Connect data for Obsidian daily notes via Node-RED",
+  "scripts": {
+    "test-daily": "node garmin-fetch.js --type daily --date $(date -v-1d +%Y-%m-%d)",
+    "test-weekly": "node garmin-fetch.js --type weekly --weekStart 2026-02-16 --weekEnd 2026-02-22"
+  },
+  "dependencies": {
+    "garmin-connect": "^1.6.2"
+  }
+}
