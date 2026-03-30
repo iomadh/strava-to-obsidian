@@ -238,13 +238,49 @@ async function testHydration(client, date) {
     }
 }
 
+async function testStress(client, date) {
+    header('STRESS — ' + date);
+    try {
+        const url = 'https://connectapi.garmin.com/wellness-service/wellness/dailyStress/' + date;
+        const data = await client.get(url);
+        ok('averageStressLevel',  data.averageStressLevel);
+        ok('maxStressLevel',      data.maxStressLevel);
+        ok('stressQualifier',     data.stressQualifier);
+        console.log('\n  Raw top-level keys:', Object.keys(data || {}).join(', '));
+    } catch (e) {
+        console.log('  ✗ FAILED: ' + e.message);
+    }
+}
+
+async function testSummary(client, date) {
+    header('USER SUMMARY (intensity minutes + steps) — ' + date);
+    try {
+        const profile = await client.getUserProfile();
+        const displayName = profile.displayName;
+        ok('displayName', displayName);
+        const url = 'https://connectapi.garmin.com/usersummary-service/usersummary/daily/'
+                  + displayName + '?calendarDate=' + date;
+        const data = await client.get(url);
+        ok('totalSteps',               data.totalSteps);
+        ok('moderateIntensityMinutes', data.moderateIntensityMinutes);
+        ok('vigorousIntensityMinutes', data.vigorousIntensityMinutes);
+        ok('floorsAscended',           data.floorsAscended);
+        ok('averageStressLevel',       data.averageStressLevel);
+        ok('bodyBatteryMostRested',    data.bodyBatteryMostRested);
+        ok('bodyBatteryLeastRested',   data.bodyBatteryLeastRested);
+        console.log('\n  Raw top-level keys:', Object.keys(data || {}).join(', '));
+    } catch (e) {
+        console.log('  ✗ FAILED: ' + e.message);
+    }
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
     const args  = parseArgs(process.argv.slice(2));
     const date  = args.date || yesterday();
     const tests = args.tests === 'all'
-        ? ['sleep', 'hr', 'steps', 'activities', 'weight', 'hydration']
+        ? ['sleep', 'hr', 'steps', 'activities', 'weight', 'hydration', 'stress', 'summary']
         : args.tests.split(',').map(s => s.trim());
 
     console.log('Garmin Connect API Test Harness');
@@ -262,6 +298,8 @@ async function main() {
             case 'activities': await testActivities(client);       break;
             case 'weight':     await testWeight(client, date);     break;
             case 'hydration':  await testHydration(client, date);  break;
+            case 'stress':     await testStress(client, date);     break;
+            case 'summary':    await testSummary(client, date);    break;
             default:
                 console.log('\n  Unknown test: ' + test);
         }

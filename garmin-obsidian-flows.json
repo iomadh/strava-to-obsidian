@@ -22,12 +22,31 @@
         "z": "garmin_obsidian_tab",
         "name": "Setup (run once)",
         "props": [
-            { "p": "garminEmail",          "v": "YOUR_EMAIL@EXAMPLE.COM",                               "vt": "str" },
-            { "p": "garminPassword",       "v": "YOUR_GARMIN_PASSWORD",                                 "vt": "str" },
-            { "p": "configFilePath",       "v": "/path/to/strava-to-obsidian/garmin.credentials.json", "vt": "str" },
-            { "p": "scriptPath",           "v": "/path/to/strava-to-obsidian/garmin-fetch.js",          "vt": "str" },
-            { "p": "vaultPath",            "v": "/kms/10 PMS/11 Daily Notes",                           "vt": "str" },
-            { "p": "garminTimezoneOffset", "v": "0",                                                    "vt": "num" }
+            {
+                "p": "garminEmail",
+                "v": "YOUR_EMAIL@EXAMPLE.COM",
+                "vt": "str"
+            },
+            {
+                "p": "garminPassword",
+                "v": "YOUR_GARMIN_PASSWORD",
+                "vt": "str"
+            },
+            {
+                "p": "configFilePath",
+                "v": "/path/to/strava-to-obsidian/garmin.credentials.json",
+                "vt": "str"
+            },
+            {
+                "p": "scriptPath",
+                "v": "/path/to/strava-to-obsidian/garmin-fetch.js",
+                "vt": "str"
+            },
+            {
+                "p": "vaultPath",
+                "v": "/kms/10 PMS/11 Daily Notes",
+                "vt": "str"
+            }
         ],
         "repeat": "",
         "crontab": "",
@@ -36,14 +55,18 @@
         "topic": "",
         "x": 160,
         "y": 80,
-        "wires": [[ "setup_store" ]]
+        "wires": [
+            [
+                "setup_store"
+            ]
+        ]
     },
     {
         "id": "setup_store",
         "type": "function",
         "z": "garmin_obsidian_tab",
         "name": "Store Config",
-        "func": "if (!msg.garminEmail || msg.garminEmail === 'YOUR_EMAIL@EXAMPLE.COM') {\n    node.warn('Set garminEmail in the Setup inject node.');\n    return null;\n}\nif (!msg.garminPassword || msg.garminPassword === 'YOUR_GARMIN_PASSWORD') {\n    node.warn('Set garminPassword in the Setup inject node.');\n    return null;\n}\nif (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('vaultPath', msg.vaultPath);\nflow.set('garminTimezoneOffset', msg.garminTimezoneOffset || 0);\nflow.set('scriptPath', msg.scriptPath);\nmsg.payload = JSON.stringify({ email: msg.garminEmail, password: msg.garminPassword }, null, 2);\nmsg.filename = msg.configFilePath;\nnode.status({ fill: 'green', shape: 'dot', text: 'Config written to ' + msg.configFilePath });\nreturn msg;",
+        "func": "if (!msg.garminEmail || msg.garminEmail === 'YOUR_EMAIL@EXAMPLE.COM') {\n    node.warn('Set garminEmail in the Setup inject node.');\n    return null;\n}\nif (!msg.garminPassword || msg.garminPassword === 'YOUR_GARMIN_PASSWORD') {\n    node.warn('Set garminPassword in the Setup inject node.');\n    return null;\n}\nif (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('vaultPath', msg.vaultPath);\nflow.set('scriptPath', msg.scriptPath);\nmsg.payload = JSON.stringify({ email: msg.garminEmail, password: msg.garminPassword }, null, 2);\nmsg.filename = msg.configFilePath;\nnode.status({ fill: 'green', shape: 'dot', text: 'Config written to ' + msg.configFilePath });\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -52,7 +75,11 @@
         "libs": [],
         "x": 380,
         "y": 80,
-        "wires": [[ "setup_write_config" ]]
+        "wires": [
+            [
+                "setup_write_config"
+            ]
+        ]
     },
     {
         "id": "setup_write_config",
@@ -67,7 +94,9 @@
         "encoding": "none",
         "x": 620,
         "y": 80,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
     {
         "id": "comment_flow1",
@@ -83,16 +112,20 @@
         "id": "garmin_daily_inject",
         "type": "inject",
         "z": "garmin_obsidian_tab",
-        "name": "Daily at 22:30 UTC",
+        "name": "Daily at 02:00 UTC",
         "props": [],
         "repeat": "",
-        "crontab": "30 22 * * *",
+        "crontab": "0 2 * * *",
         "once": false,
         "onceDelay": "",
         "topic": "",
         "x": 150,
         "y": 220,
-        "wires": [[ "garmin_daily_build" ]]
+        "wires": [
+            [
+                "garmin_daily_build"
+            ]
+        ]
     },
     {
         "id": "garmin_manual_inject",
@@ -100,7 +133,11 @@
         "z": "garmin_obsidian_tab",
         "name": "Run Single Date (manual)",
         "props": [
-            { "p": "manualDate", "v": "2026-03-17", "vt": "str" }
+            {
+                "p": "manualDate",
+                "v": "2026-03-17",
+                "vt": "str"
+            }
         ],
         "repeat": "",
         "crontab": "",
@@ -109,14 +146,18 @@
         "topic": "",
         "x": 190,
         "y": 260,
-        "wires": [[ "garmin_daily_build" ]]
+        "wires": [
+            [
+                "garmin_daily_build"
+            ]
+        ]
     },
     {
         "id": "garmin_daily_build",
         "type": "function",
         "z": "garmin_obsidian_tab",
         "name": "Build Daily Command",
-        "func": "const scriptPath = flow.get('scriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nlet date;\nif (msg.manualDate) {\n    date = msg.manualDate;\n} else {\n    const tz = flow.get('garminTimezoneOffset') || 0;\n    const today = new Date(Date.now() + tz * 3600000);\n    const yyyy = String(today.getUTCFullYear());\n    const mm = String(today.getUTCMonth() + 1).padStart(2, '0');\n    const dd = String(today.getUTCDate()).padStart(2, '0');\n    date = yyyy + '-' + mm + '-' + dd;\n}\nconst parts = date.split('-');\nmsg.garminDate = date;\nmsg.dateStr = { year: parts[0], month: parts[1], day: parts[2] };\nmsg.files = { dailynotefile: date + '.md' };\nmsg._isHistoric = false;\nmsg.payload = scriptPath + ' --type daily --date ' + date;\nreturn msg;",
+        "func": "const scriptPath = flow.get('scriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nlet date;\nif (msg.manualDate) {\n    date = msg.manualDate;\n} else {\n    // Use system local time — yesterday relative to when this runs\n    const now = new Date();\n    const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);\n    const yyyy = String(yest.getFullYear());\n    const mm = String(yest.getMonth() + 1).padStart(2, '0');\n    const dd = String(yest.getDate()).padStart(2, '0');\n    date = yyyy + '-' + mm + '-' + dd;\n}\nnode.warn('garmin daily → date: ' + date);\nconst parts = date.split('-');\nmsg.garminDate = date;\nmsg.dateStr = { year: parts[0], month: parts[1], day: parts[2] };\nmsg.files = { dailynotefile: date + '.md' };\nmsg._isHistoric = false;\nmsg.payload = scriptPath + ' --type daily --date ' + date;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -125,7 +166,11 @@
         "libs": [],
         "x": 360,
         "y": 220,
-        "wires": [[ "garmin_daily_exec" ]]
+        "wires": [
+            [
+                "garmin_daily_exec"
+            ]
+        ]
     },
     {
         "id": "garmin_daily_exec",
@@ -142,7 +187,15 @@
         "outputs": 3,
         "x": 570,
         "y": 220,
-        "wires": [[ "garmin_daily_parse" ], [ "exec_err_debug" ], []]
+        "wires": [
+            [
+                "garmin_daily_parse"
+            ],
+            [
+                "exec_err_debug"
+            ],
+            []
+        ]
     },
     {
         "id": "garmin_daily_parse",
@@ -158,7 +211,11 @@
         "libs": [],
         "x": 760,
         "y": 220,
-        "wires": [[ "link_daily_to_format" ]]
+        "wires": [
+            [
+                "link_daily_to_format"
+            ]
+        ]
     },
     {
         "id": "link_daily_to_format",
@@ -166,7 +223,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Format Chain",
         "mode": "link",
-        "links": [ "link_garmin_to_format" ],
+        "links": [
+            "link_garmin_to_format"
+        ],
         "x": 945,
         "y": 220,
         "wires": []
@@ -209,14 +268,18 @@
         "topic": "",
         "x": 160,
         "y": 420,
-        "wires": [[ "garmin_weekly_build" ]]
+        "wires": [
+            [
+                "garmin_weekly_build"
+            ]
+        ]
     },
     {
         "id": "garmin_weekly_build",
         "type": "function",
         "z": "garmin_obsidian_tab",
         "name": "Build Weekly Command",
-        "func": "const scriptPath = flow.get('scriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nconst tz = flow.get('garminTimezoneOffset') || 0;\nconst now = Date.now() + tz * 3600000;\nconst sunday = new Date(now - 86400000);\nconst monday = new Date(now - 7 * 86400000);\nconst fmt = function(d) {\n    return d.getUTCFullYear() + '-'\n        + String(d.getUTCMonth() + 1).padStart(2, '0') + '-'\n        + String(d.getUTCDate()).padStart(2, '0');\n};\nmsg.weekStart = fmt(monday);\nmsg.weekEnd   = fmt(sunday);\nconst yyyy = String(sunday.getUTCFullYear());\nconst mm = String(sunday.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(sunday.getUTCDate()).padStart(2, '0');\nmsg.garminDate = yyyy + '-' + mm + '-' + dd;\nmsg.dateStr = { year: yyyy, month: mm, day: dd };\nmsg.files = { dailynotefile: yyyy + '-' + mm + '-' + dd + '.md' };\nconst jan1 = new Date(Date.UTC(sunday.getUTCFullYear(), 0, 1));\nconst weekNum = Math.ceil(((sunday - jan1) / 86400000 + jan1.getUTCDay() + 1) / 7);\nmsg.weekLabel = 'W' + String(weekNum).padStart(2, '0');\nmsg._isHistoric = false;\nmsg.payload = scriptPath + ' --type weekly --weekStart ' + msg.weekStart + ' --weekEnd ' + msg.weekEnd;\nreturn msg;",
+        "func": "const scriptPath = flow.get('scriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\n// Runs Monday 02:00 local — sunday = yesterday, monday = 6 days before that\nconst today = new Date();\nconst sunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);\nconst monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);\nconst fmt = function(d) {\n    return d.getFullYear() + '-'\n        + String(d.getMonth() + 1).padStart(2, '0') + '-'\n        + String(d.getDate()).padStart(2, '0');\n};\nmsg.weekStart = fmt(monday);\nmsg.weekEnd   = fmt(sunday);\nconst yyyy = String(sunday.getFullYear());\nconst mm = String(sunday.getMonth() + 1).padStart(2, '0');\nconst dd = String(sunday.getDate()).padStart(2, '0');\nmsg.garminDate = yyyy + '-' + mm + '-' + dd;\nmsg.dateStr = { year: yyyy, month: mm, day: dd };\nmsg.files = { dailynotefile: yyyy + '-' + mm + '-' + dd + '.md' };\nconst jan1 = new Date(sunday.getFullYear(), 0, 1);\nconst weekNum = Math.ceil(((sunday - jan1) / 86400000 + jan1.getDay() + 1) / 7);\nmsg.weekLabel = 'W' + String(weekNum).padStart(2, '0');\nmsg._isHistoric = false;\nmsg.payload = scriptPath + ' --type weekly --weekStart ' + msg.weekStart + ' --weekEnd ' + msg.weekEnd;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -225,7 +288,11 @@
         "libs": [],
         "x": 370,
         "y": 420,
-        "wires": [[ "garmin_weekly_exec" ]]
+        "wires": [
+            [
+                "garmin_weekly_exec"
+            ]
+        ]
     },
     {
         "id": "garmin_weekly_exec",
@@ -242,7 +309,15 @@
         "outputs": 3,
         "x": 580,
         "y": 420,
-        "wires": [[ "garmin_weekly_parse" ], [ "exec_err_debug" ], []]
+        "wires": [
+            [
+                "garmin_weekly_parse"
+            ],
+            [
+                "exec_err_debug"
+            ],
+            []
+        ]
     },
     {
         "id": "garmin_weekly_parse",
@@ -258,8 +333,18 @@
         "libs": [],
         "x": 780,
         "y": 420,
-        "wires": [[ "garmin_format_weekly" ], [ "garmin_weekly_debug" ]],
-        "outputLabels": [ "rides found", "no rides / error" ]
+        "wires": [
+            [
+                "garmin_format_weekly"
+            ],
+            [
+                "garmin_weekly_debug"
+            ]
+        ],
+        "outputLabels": [
+            "rides found",
+            "no rides / error"
+        ]
     },
     {
         "id": "garmin_format_weekly",
@@ -275,7 +360,11 @@
         "libs": [],
         "x": 990,
         "y": 420,
-        "wires": [[ "garmin_build_filename_w" ]]
+        "wires": [
+            [
+                "garmin_build_filename_w"
+            ]
+        ]
     },
     {
         "id": "garmin_build_filename_w",
@@ -291,7 +380,11 @@
         "libs": [],
         "x": 1190,
         "y": 420,
-        "wires": [[ "link_weekly_to_write" ]]
+        "wires": [
+            [
+                "link_weekly_to_write"
+            ]
+        ]
     },
     {
         "id": "link_weekly_to_write",
@@ -299,7 +392,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Write Queue",
         "mode": "link",
-        "links": [ "link_from_garmin" ],
+        "links": [
+            "link_from_garmin"
+        ],
         "x": 1375,
         "y": 420,
         "wires": []
@@ -337,7 +432,11 @@
         "z": "garmin_obsidian_tab",
         "name": "Load History (manual)",
         "props": [
-            { "p": "historyYear", "v": "2024", "vt": "num" }
+            {
+                "p": "historyYear",
+                "v": "2024",
+                "vt": "num"
+            }
         ],
         "repeat": "",
         "crontab": "",
@@ -346,7 +445,11 @@
         "topic": "",
         "x": 170,
         "y": 620,
-        "wires": [[ "garmin_historic_init" ]]
+        "wires": [
+            [
+                "garmin_historic_init"
+            ]
+        ]
     },
     {
         "id": "garmin_historic_init",
@@ -362,7 +465,11 @@
         "libs": [],
         "x": 380,
         "y": 620,
-        "wires": [[ "garmin_historic_build" ]]
+        "wires": [
+            [
+                "garmin_historic_build"
+            ]
+        ]
     },
     {
         "id": "garmin_historic_build",
@@ -378,7 +485,11 @@
         "libs": [],
         "x": 580,
         "y": 620,
-        "wires": [[ "garmin_historic_exec" ]]
+        "wires": [
+            [
+                "garmin_historic_exec"
+            ]
+        ]
     },
     {
         "id": "garmin_historic_exec",
@@ -395,7 +506,15 @@
         "outputs": 3,
         "x": 770,
         "y": 620,
-        "wires": [[ "garmin_historic_parse" ], [ "exec_err_debug" ], []]
+        "wires": [
+            [
+                "garmin_historic_parse"
+            ],
+            [
+                "exec_err_debug"
+            ],
+            []
+        ]
     },
     {
         "id": "garmin_historic_parse",
@@ -411,8 +530,18 @@
         "libs": [],
         "x": 960,
         "y": 620,
-        "wires": [[ "link_historic_to_format" ], [ "garmin_historic_next_day" ]],
-        "outputLabels": [ "ok → format", "skip → next day" ]
+        "wires": [
+            [
+                "link_historic_to_format"
+            ],
+            [
+                "garmin_historic_next_day"
+            ]
+        ],
+        "outputLabels": [
+            "ok → format",
+            "skip → next day"
+        ]
     },
     {
         "id": "link_historic_to_format",
@@ -420,7 +549,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Format Chain",
         "mode": "link",
-        "links": [ "link_garmin_to_format" ],
+        "links": [
+            "link_garmin_to_format"
+        ],
         "x": 1145,
         "y": 620,
         "wires": []
@@ -430,10 +561,17 @@
         "type": "link in",
         "z": "garmin_obsidian_tab",
         "name": "← Next Day",
-        "links": [ "link_historic_skip", "link_next_day_out" ],
+        "links": [
+            "link_historic_skip",
+            "link_next_day_out"
+        ],
         "x": 1145,
         "y": 700,
-        "wires": [[ "garmin_historic_advance" ]]
+        "wires": [
+            [
+                "garmin_historic_advance"
+            ]
+        ]
     },
     {
         "id": "garmin_historic_advance",
@@ -449,8 +587,18 @@
         "libs": [],
         "x": 960,
         "y": 700,
-        "wires": [[ "garmin_historic_delay" ], [ "garmin_historic_done" ]],
-        "outputLabels": [ "next day", "done" ]
+        "wires": [
+            [
+                "garmin_historic_delay"
+            ],
+            [
+                "garmin_historic_done"
+            ]
+        ],
+        "outputLabels": [
+            "next day",
+            "done"
+        ]
     },
     {
         "id": "garmin_historic_delay",
@@ -471,7 +619,11 @@
         "outputs": 1,
         "x": 760,
         "y": 700,
-        "wires": [[ "garmin_historic_build" ]]
+        "wires": [
+            [
+                "garmin_historic_build"
+            ]
+        ]
     },
     {
         "id": "garmin_historic_done",
@@ -505,17 +657,24 @@
         "type": "link in",
         "z": "garmin_obsidian_tab",
         "name": "← Daily / Historic",
-        "links": [ "link_daily_to_format", "link_historic_to_format" ],
+        "links": [
+            "link_daily_to_format",
+            "link_historic_to_format"
+        ],
         "x": 115,
         "y": 900,
-        "wires": [[ "garmin_format_daily" ]]
+        "wires": [
+            [
+                "garmin_format_daily"
+            ]
+        ]
     },
     {
         "id": "garmin_format_daily",
         "type": "function",
         "z": "garmin_obsidian_tab",
-        "name": "Format Wellness Entry",
-        "func": "function fmtDur(s) {\n    if (!s) return null;\n    const h = Math.floor(s / 3600);\n    const m = Math.floor((s % 3600) / 60);\n    return h > 0 ? h + 'h ' + m + 'm' : m + 'm';\n}\nconst sl = msg.sleepData    || {};\nconst hr = msg.hrData       || {};\nconst wl = msg.wellnessData || {};\nconst wt = msg.weightData   || null;\nconst dedupId = 'garmin-wellness-' + msg.garminDate;\nconst lines = [\n    '- 00:00 \\uD83D\\uDE34 Garmin Wellness #garmin',\n    '  <!-- ' + dedupId + ' -->'\n];\n\n// Sleep\nconst sp = [];\nif (sl.durationSeconds)   sp.push(fmtDur(sl.durationSeconds));\nif (sl.sleepScore)        sp.push('Score: ' + sl.sleepScore);\nif (sl.deepSleepSeconds)  sp.push('Deep ' + fmtDur(sl.deepSleepSeconds));\nif (sl.remSleepSeconds)   sp.push('REM ' + fmtDur(sl.remSleepSeconds));\nif (sl.awakeSleepSeconds) sp.push('Awake ' + fmtDur(sl.awakeSleepSeconds));\nlines.push('\\t- **Sleep:** ' + (sp.length ? sp.join(' | ') : 'No data'));\n\n// Heart rate\nconst hp = [];\nif (hr.restingHR) hp.push('Resting ' + hr.restingHR + ' bpm');\nif (hr.maxHR)     hp.push('Max ' + hr.maxHR + ' bpm');\nif (hp.length) lines.push('\\t- **Heart Rate:** ' + hp.join(' | '));\n\n// Steps\nif (wl.totalSteps) {\n    lines.push('\\t- **Steps:** ' + Number(wl.totalSteps).toLocaleString('en-AU'));\n}\n\n// Weight (only present on days it was logged)\nif (wt && wt.kg) {\n    lines.push('\\t- **Weight:** ' + wt.kg.toFixed(1) + ' kg');\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.dedupId = dedupId;\nreturn msg;",
+        "name": "Build Garmin Props",
+        "func": "const sl = msg.sleepData    || {};\nconst hr = msg.hrData       || {};\nconst wl = msg.wellnessData || {};\nconst wt = msg.weightData   || null;\n\nmsg.garminProps = {};\nif (wl.totalSteps)                    msg.garminProps.garmin_steps = wl.totalSteps;\nif (sl.durationSeconds)               msg.garminProps.garmin_sleep_hours = +(sl.durationSeconds / 3600).toFixed(1);\nif (sl.sleepScore)                    msg.garminProps.garmin_sleep_score = sl.sleepScore;\nif (sl.deepSleepSeconds)              msg.garminProps.garmin_sleep_deep_min = Math.round(sl.deepSleepSeconds / 60);\nif (sl.lightSleepSeconds)             msg.garminProps.garmin_sleep_light_min = Math.round(sl.lightSleepSeconds / 60);\nif (sl.remSleepSeconds)               msg.garminProps.garmin_sleep_rem_min = Math.round(sl.remSleepSeconds / 60);\nif (sl.awakeSleepSeconds)             msg.garminProps.garmin_sleep_awake_min = Math.round(sl.awakeSleepSeconds / 60);\nif (sl.bodyBatteryChange != null)     msg.garminProps.garmin_body_battery_sleep = sl.bodyBatteryChange;\nif (hr.restingHR)                     msg.garminProps.garmin_hr_resting = hr.restingHR;\nif (hr.maxHR)                         msg.garminProps.garmin_hr_max = hr.maxHR;\nif (wl.averageStressLevel)            msg.garminProps.garmin_stress = wl.averageStressLevel;\nif (wl.moderateIntensityMinutes)      msg.garminProps.garmin_intensity_moderate = wl.moderateIntensityMinutes;\nif (wl.vigorousIntensityMinutes)      msg.garminProps.garmin_intensity_vigorous = wl.vigorousIntensityMinutes;\nconst totalIntensity = (wl.moderateIntensityMinutes || 0) + 2 * (wl.vigorousIntensityMinutes || 0);\nif (totalIntensity > 0)               msg.garminProps.garmin_intensity_total = totalIntensity;\nif (wt && wt.kg)                      msg.garminProps.garmin_weight_kg = wt.kg;\nmsg.garminProps.garmin_data = true;\n\nmsg.dedupId = 'garmin_data';\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -524,7 +683,11 @@
         "libs": [],
         "x": 310,
         "y": 900,
-        "wires": [[ "garmin_build_filename" ]]
+        "wires": [
+            [
+                "garmin_build_filename"
+            ]
+        ]
     },
     {
         "id": "garmin_build_filename",
@@ -540,7 +703,11 @@
         "libs": [],
         "x": 510,
         "y": 900,
-        "wires": [[ "link_daily_to_write" ]]
+        "wires": [
+            [
+                "link_daily_to_write"
+            ]
+        ]
     },
     {
         "id": "link_daily_to_write",
@@ -548,7 +715,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Write Queue",
         "mode": "link",
-        "links": [ "link_from_garmin" ],
+        "links": [
+            "link_from_garmin"
+        ],
         "x": 695,
         "y": 900,
         "wires": []
@@ -558,10 +727,17 @@
         "type": "link in",
         "z": "garmin_obsidian_tab",
         "name": "← All Flows",
-        "links": [ "link_daily_to_write", "link_weekly_to_write" ],
+        "links": [
+            "link_daily_to_write",
+            "link_weekly_to_write"
+        ],
         "x": 115,
         "y": 960,
-        "wires": [[ "write_garmin_queue" ]]
+        "wires": [
+            [
+                "write_garmin_queue"
+            ]
+        ]
     },
     {
         "id": "write_garmin_queue",
@@ -582,7 +758,11 @@
         "outputs": 1,
         "x": 300,
         "y": 960,
-        "wires": [[ "garmin_file_read" ]]
+        "wires": [
+            [
+                "garmin_file_read"
+            ]
+        ]
     },
     {
         "id": "garmin_file_read",
@@ -598,14 +778,18 @@
         "allProps": true,
         "x": 480,
         "y": 960,
-        "wires": [[ "garmin_insert_notes" ]]
+        "wires": [
+            [
+                "garmin_insert_notes"
+            ]
+        ]
     },
     {
         "id": "garmin_insert_notes",
         "type": "function",
         "z": "garmin_obsidian_tab",
-        "name": "Insert into ## Notes",
-        "func": "const noteupdate = msg.noteupdate;\nconst dedupId = msg.dedupId;\nlet content = (typeof msg.payload === 'string') ? msg.payload : '';\n\n// Dedup check\nif (dedupId && content.indexOf(dedupId) !== -1) {\n    node.log('Entry ' + dedupId + ' already exists. Skipping.');\n    if (msg._isHistoric) return [null, msg];  // advance to next day\n    return null;\n}\n\n// Insert under ## Notes heading\nconst notesHeading = '## Notes';\nconst notesIdx = content.indexOf(notesHeading);\nif (notesIdx !== -1) {\n    const afterNotes = content.substring(notesIdx + notesHeading.length);\n    const nextMatch = afterNotes.match(/\\n## [^#]/);\n    if (nextMatch) {\n        const insertPos = notesIdx + notesHeading.length + nextMatch.index;\n        msg.payload = content.substring(0, insertPos) + '\\n' + noteupdate + content.substring(insertPos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + noteupdate + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + noteupdate + '\\n';\n}\nreturn [msg, null];",
+        "name": "Merge Frontmatter Props",
+        "func": "const props = msg.garminProps;\nlet content = (typeof msg.payload === 'string') ? msg.payload : '';\n\n// Build new property lines\nconst newEntries = Object.entries(props).map(([k, v]) => k + ': ' + v).join('\\n');\n\nconst fmMatch = content.match(/^---\\n([\\s\\S]*?)\\n---/);\nif (fmMatch) {\n    // Strip existing garmin_* lines, then append updated values\n    const existingFm = fmMatch[1].split('\\n').filter(l => !l.startsWith('garmin_')).join('\\n');\n    const newFm = existingFm.trim() ? existingFm + '\\n' + newEntries : newEntries;\n    msg.payload = content.replace(/^---\\n([\\s\\S]*?)\\n---/, '---\\n' + newFm + '\\n---');\n} else {\n    // Create frontmatter from scratch\n    msg.payload = '---\\n' + newEntries + '\\n---\\n' + content;\n}\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -614,8 +798,18 @@
         "libs": [],
         "x": 670,
         "y": 960,
-        "wires": [[ "garmin_file_write" ], [ "link_historic_skip" ]],
-        "outputLabels": [ "write", "skip (duplicate)" ]
+        "wires": [
+            [
+                "garmin_file_write"
+            ],
+            [
+                "link_historic_skip"
+            ]
+        ],
+        "outputLabels": [
+            "write",
+            "skip (duplicate)"
+        ]
     },
     {
         "id": "link_historic_skip",
@@ -623,7 +817,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Next Day (skip)",
         "mode": "link",
-        "links": [ "garmin_historic_next_day" ],
+        "links": [
+            "garmin_historic_next_day"
+        ],
         "x": 865,
         "y": 1020,
         "wires": []
@@ -641,7 +837,11 @@
         "encoding": "none",
         "x": 860,
         "y": 960,
-        "wires": [[ "garmin_write_next_day" ]]
+        "wires": [
+            [
+                "garmin_write_next_day"
+            ]
+        ]
     },
     {
         "id": "garmin_write_next_day",
@@ -657,8 +857,18 @@
         "libs": [],
         "x": 1050,
         "y": 960,
-        "wires": [[ "link_next_day_out" ], [ "garmin_write_debug" ]],
-        "outputLabels": [ "historic → advance", "debug" ]
+        "wires": [
+            [
+                "link_next_day_out"
+            ],
+            [
+                "garmin_write_debug"
+            ]
+        ],
+        "outputLabels": [
+            "historic → advance",
+            "debug"
+        ]
     },
     {
         "id": "link_next_day_out",
@@ -666,7 +876,9 @@
         "z": "garmin_obsidian_tab",
         "name": "→ Next Day (written)",
         "mode": "link",
-        "links": [ "garmin_historic_next_day" ],
+        "links": [
+            "garmin_historic_next_day"
+        ],
         "x": 1235,
         "y": 940,
         "wires": []

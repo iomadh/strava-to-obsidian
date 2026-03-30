@@ -11,6 +11,9 @@
  */
 'use strict';
 
+// Redirect console.log to stderr so library noise doesn't pollute JSON stdout
+console.log = (...args) => process.stderr.write(args.map(String).join(' ') + '\n');
+
 const { GarminConnect } = require('garmin-connect');
 const fs   = require('fs');
 const path = require('path');
@@ -68,50 +71,63 @@ async function getClient() {
 }
 
 async function fetchDaily(client, date) {
-    const weightUrl = 'https://connectapi.garmin.com/weight-service/weight/dayview/' + date;
+    // Get display name for usersummary endpoint (steps, intensity, stress all in one call)
+    const profile = await client.getUserProfile();
+    const displayName = profile.displayName;
 
-    const [sleepResult, stepsResult, hrResult, weightResult] = await Promise.allSettled([
+    const summaryUrl = 'https://connectapi.garmin.com/usersummary-service/usersummary/daily/'
+                     + displayName + '?calendarDate=' + date;
+    const weightUrl  = 'https://connectapi.garmin.com/weight-service/weight/dateRange'
+                     + '?startDate=' + date + '&endDate=' + date;
+
+    const [sleepResult, hrResult, weightResult, summaryResult] = await Promise.allSettled([
         client.getSleepData(toDate(date)),
-        client.getSteps(toDate(date)),
         client.getHeartRate(toDate(date)),
-        client.get(weightUrl)
+        client.get(weightUrl),
+        client.get(summaryUrl)
     ]);
 
-    // Sleep
+    // Sleep — score lives in sleepScores.overall.value
     const sleepRaw = sleepResult.status === 'fulfilled' ? sleepResult.value : null;
     const dto = (sleepRaw && sleepRaw.dailySleepDTO) || {};
     const sleep = {
-        durationSeconds:   dto.sleepTimeSeconds    || null,
-        deepSleepSeconds:  dto.deepSleepSeconds     || null,
-        lightSleepSeconds: dto.lightSleepSeconds    || null,
-        remSleepSeconds:   dto.remSleepSeconds      || null,
-        awakeSleepSeconds: dto.awakeSleepSeconds    || null,
-        sleepScore:        dto.sleepScorePersonalized || dto.sleepScore || null
+        durationSeconds:   dto.sleepTimeSeconds   || null,
+        deepSleepSeconds:  dto.deepSleepSeconds    || null,
+        lightSleepSeconds: dto.lightSleepSeconds   || null,
+        remSleepSeconds:   dto.remSleepSeconds     || null,
+        awakeSleepSeconds: dto.awakeSleepSeconds   || null,
+        sleepScore:        (dto.sleepScores && dto.sleepScores.overall && dto.sleepScores.overall.value) || null,
+        bodyBatteryChange: (sleepRaw && sleepRaw.bodyBatteryChange) || null
     };
 
-    // Heart rate — use dedicated endpoint (not sleep DTO, which returns null)
+    // Heart rate
     const hrRaw = hrResult.status === 'fulfilled' ? hrResult.value : null;
     const hr = {
         restingHR: (hrRaw && hrRaw.restingHeartRate) || null,
         maxHR:     (hrRaw && hrRaw.maxHeartRate)     || null
     };
 
-    // Steps
-    const stepsRaw = stepsResult.status === 'fulfilled' ? stepsResult.value : null;
-    const totalSteps = typeof stepsRaw === 'number' ? stepsRaw :
-                       (stepsRaw && typeof stepsRaw.steps === 'number') ? stepsRaw.steps : null;
+    // User summary — steps, intensity minutes, stress (all in one call)
+    const summaryRaw = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+    const wellness = {
+        totalSteps:               (summaryRaw && summaryRaw.totalSteps)               || null,
+        moderateIntensityMinutes: (summaryRaw && summaryRaw.moderateIntensityMinutes) || null,
+        vigorousIntensityMinutes: (summaryRaw && summaryRaw.vigorousIntensityMinutes) || null,
+        averageStressLevel:       (summaryRaw && summaryRaw.averageStressLevel > 0) ? summaryRaw.averageStressLevel : null,
+    };
 
     // Weight — only present if logged on this exact date
     const weightRaw = weightResult.status === 'fulfilled' ? weightResult.value : null;
-    const weightEntry = (weightRaw && weightRaw.dateWeightList && weightRaw.dateWeightList[0]) || null;
-    const weight = weightEntry ? { kg: weightEntry.weight / 1000 } : null;
+    const weightEntries = (weightRaw && weightRaw.dateWeightList) || [];
+    const todayWeight = weightEntries.find(e => e.calendarDate === date);
+    const weight = todayWeight ? { kg: +(todayWeight.weight / 1000).toFixed(1) } : null;
 
     return {
         type: 'daily',
         date,
         sleep,
         hr,
-        wellness: { totalSteps },
+        wellness,
         weight
     };
 }
