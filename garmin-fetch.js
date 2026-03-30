@@ -80,7 +80,7 @@ async function fetchDaily(client, date) {
     const weightUrl  = 'https://connectapi.garmin.com/weight-service/weight/dateRange'
                      + '?startDate=' + date + '&endDate=' + date;
     const bpUrl      = 'https://connectapi.garmin.com/bloodpressure-service/bloodpressure/range/'
-                     + date + '/' + date;
+                     + date + '/' + date + '?includeAll=true';
 
     const [sleepResult, hrResult, weightResult, summaryResult, bpResult] = await Promise.allSettled([
         client.getSleepData(toDate(date)),
@@ -125,13 +125,27 @@ async function fetchDaily(client, date) {
     const todayWeight = weightEntries.find(e => e.calendarDate === date);
     const weight = todayWeight ? { kg: +(todayWeight.weight / 1000).toFixed(1) } : null;
 
-    // Blood pressure — average of high/low (equal when only 1 reading)
+    // Blood pressure — use individual measurements (includeAll=true); average if multiple
     const bpRaw = bpResult.status === 'fulfilled' ? bpResult.value : null;
     const bpSummary = (bpRaw && bpRaw.measurementSummaries && bpRaw.measurementSummaries[0]) || null;
-    const bp = bpSummary ? {
-        systolic:  Math.round((bpSummary.highSystolic  + bpSummary.lowSystolic)  / 2),
-        diastolic: Math.round((bpSummary.highDiastolic + bpSummary.lowDiastolic) / 2)
-    } : null;
+    const bpMeasurements = (bpSummary && bpSummary.measurements) || [];
+    let bp = null;
+    if (bpMeasurements.length > 0) {
+        const n = bpMeasurements.length;
+        const avgSystolic  = Math.round(bpMeasurements.reduce((s, m) => s + m.systolic,  0) / n);
+        const avgDiastolic = Math.round(bpMeasurements.reduce((s, m) => s + m.diastolic, 0) / n);
+        const pulseReadings = bpMeasurements.filter(m => m.pulse);
+        const avgPulse = pulseReadings.length
+            ? Math.round(pulseReadings.reduce((s, m) => s + m.pulse, 0) / pulseReadings.length)
+            : null;
+        bp = { systolic: avgSystolic, diastolic: avgDiastolic, pulse: avgPulse };
+    } else if (bpSummary) {
+        bp = {
+            systolic:  Math.round((bpSummary.highSystolic  + bpSummary.lowSystolic)  / 2),
+            diastolic: Math.round((bpSummary.highDiastolic + bpSummary.lowDiastolic) / 2),
+            pulse: null
+        };
+    }
 
     return {
         type: 'daily',
