@@ -238,6 +238,25 @@ async function testHydration(client, date) {
     }
 }
 
+async function testBloodPressure(client, date) {
+    header('BLOOD PRESSURE — ' + date);
+    const urls = [
+        'https://connectapi.garmin.com/bloodpressure-service/bloodpressure?startDate=' + date + '&endDate=' + date,
+        'https://connectapi.garmin.com/bloodpressure-service/bloodpressure/range/' + date + '/' + date,
+        'https://connectapi.garmin.com/wellness-service/wellness/bloodPressure/' + date,
+    ];
+    for (const url of urls) {
+        try {
+            const data = await client.get(url);
+            console.log('  ✓ URL worked: ' + url);
+            console.log('  Raw response: ' + JSON.stringify(data, null, 2));
+            return;
+        } catch (e) {
+            console.log('  ✗ ' + url.split('/').slice(-2).join('/') + ': ' + e.message);
+        }
+    }
+}
+
 async function testStress(client, date) {
     header('STRESS — ' + date);
     try {
@@ -298,6 +317,7 @@ async function main() {
             case 'activities': await testActivities(client);       break;
             case 'weight':     await testWeight(client, date);     break;
             case 'hydration':  await testHydration(client, date);  break;
+            case 'bp':         await testBloodPressure(client, date); break;
             case 'stress':     await testStress(client, date);     break;
             case 'summary':    await testSummary(client, date);    break;
             default:

@@ -79,12 +79,15 @@ async function fetchDaily(client, date) {
                      + displayName + '?calendarDate=' + date;
     const weightUrl  = 'https://connectapi.garmin.com/weight-service/weight/dateRange'
                      + '?startDate=' + date + '&endDate=' + date;
+    const bpUrl      = 'https://connectapi.garmin.com/bloodpressure-service/bloodpressure/range/'
+                     + date + '/' + date;
 
-    const [sleepResult, hrResult, weightResult, summaryResult] = await Promise.allSettled([
+    const [sleepResult, hrResult, weightResult, summaryResult, bpResult] = await Promise.allSettled([
         client.getSleepData(toDate(date)),
         client.getHeartRate(toDate(date)),
         client.get(weightUrl),
-        client.get(summaryUrl)
+        client.get(summaryUrl),
+        client.get(bpUrl)
     ]);
 
     // Sleep — score lives in sleepScores.overall.value
@@ -122,13 +125,22 @@ async function fetchDaily(client, date) {
     const todayWeight = weightEntries.find(e => e.calendarDate === date);
     const weight = todayWeight ? { kg: +(todayWeight.weight / 1000).toFixed(1) } : null;
 
+    // Blood pressure — average of high/low (equal when only 1 reading)
+    const bpRaw = bpResult.status === 'fulfilled' ? bpResult.value : null;
+    const bpSummary = (bpRaw && bpRaw.measurementSummaries && bpRaw.measurementSummaries[0]) || null;
+    const bp = bpSummary ? {
+        systolic:  Math.round((bpSummary.highSystolic  + bpSummary.lowSystolic)  / 2),
+        diastolic: Math.round((bpSummary.highDiastolic + bpSummary.lowDiastolic) / 2)
+    } : null;
+
     return {
         type: 'daily',
         date,
         sleep,
         hr,
         wellness,
-        weight
+        weight,
+        bp
     };
 }
 
