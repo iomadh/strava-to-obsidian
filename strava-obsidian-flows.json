@@ -22,11 +22,31 @@
         "z": "strava_obsidian_tab",
         "name": "Poll Every 60 min",
         "props": [
-            { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
-            { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
-            { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
-            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
-            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" }
+            {
+                "p": "clientId",
+                "v": "YOUR_CLIENT_ID",
+                "vt": "str"
+            },
+            {
+                "p": "clientSecret",
+                "v": "YOUR_CLIENT_SECRET",
+                "vt": "str"
+            },
+            {
+                "p": "refreshToken",
+                "v": "YOUR_REFRESH_TOKEN",
+                "vt": "str"
+            },
+            {
+                "p": "vaultPath",
+                "v": "/kms/10 PMS/11 Daily Notes",
+                "vt": "str"
+            },
+            {
+                "p": "googleMapsKey",
+                "v": "YOUR_GOOGLE_MAPS_KEY",
+                "vt": "str"
+            }
         ],
         "repeat": "3600",
         "crontab": "",
@@ -35,7 +55,11 @@
         "topic": "",
         "x": 150,
         "y": 100,
-        "wires": [[ "poll_check_token" ]]
+        "wires": [
+            [
+                "poll_check_token"
+            ]
+        ]
     },
     {
         "id": "poll_check_token",
@@ -51,8 +75,18 @@
         "libs": [],
         "x": 350,
         "y": 100,
-        "wires": [[ "poll_build_request" ], [ "link_poll_to_refresh" ]],
-        "outputLabels": ["valid", "expired"]
+        "wires": [
+            [
+                "poll_build_request"
+            ],
+            [
+                "link_poll_to_refresh"
+            ]
+        ],
+        "outputLabels": [
+            "valid",
+            "expired"
+        ]
     },
     {
         "id": "link_poll_to_refresh",
@@ -60,7 +94,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Token Refresh",
         "mode": "link",
-        "links": [ "link_refresh_in" ],
+        "links": [
+            "link_refresh_in"
+        ],
         "x": 515,
         "y": 140,
         "wires": []
@@ -70,10 +106,16 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← Refresh (poll)",
-        "links": [ "link_refresh_out_poll" ],
+        "links": [
+            "link_refresh_out_poll"
+        ],
         "x": 365,
         "y": 160,
-        "wires": [[ "poll_build_request" ]]
+        "wires": [
+            [
+                "poll_build_request"
+            ]
+        ]
     },
     {
         "id": "poll_build_request",
@@ -89,7 +131,11 @@
         "libs": [],
         "x": 550,
         "y": 100,
-        "wires": [[ "poll_http" ]]
+        "wires": [
+            [
+                "poll_http"
+            ]
+        ]
     },
     {
         "id": "poll_http",
@@ -109,7 +155,11 @@
         "headers": [],
         "x": 730,
         "y": 100,
-        "wires": [[ "poll_parse" ]]
+        "wires": [
+            [
+                "poll_parse"
+            ]
+        ]
     },
     {
         "id": "poll_parse",
@@ -125,7 +175,11 @@
         "libs": [],
         "x": 900,
         "y": 100,
-        "wires": [[ "link_to_format" ]]
+        "wires": [
+            [
+                "link_to_format"
+            ]
+        ]
     },
     {
         "id": "link_to_format",
@@ -133,7 +187,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Format Chain",
         "mode": "link",
-        "links": [ "link_from_flows" ],
+        "links": [
+            "link_from_flows"
+        ],
         "x": 1055,
         "y": 100,
         "wires": []
@@ -154,13 +210,41 @@
         "z": "strava_obsidian_tab",
         "name": "Load History (manual)",
         "props": [
-            { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
-            { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
-            { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
-            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
-            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" },
-            { "p": "historyYear", "v": "2024", "vt": "num" },
-            { "p": "replaceMode", "v": "false", "vt": "bool" }
+            {
+                "p": "clientId",
+                "v": "YOUR_CLIENT_ID",
+                "vt": "str"
+            },
+            {
+                "p": "clientSecret",
+                "v": "YOUR_CLIENT_SECRET",
+                "vt": "str"
+            },
+            {
+                "p": "refreshToken",
+                "v": "YOUR_REFRESH_TOKEN",
+                "vt": "str"
+            },
+            {
+                "p": "vaultPath",
+                "v": "/kms/10 PMS/11 Daily Notes",
+                "vt": "str"
+            },
+            {
+                "p": "googleMapsKey",
+                "v": "YOUR_GOOGLE_MAPS_KEY",
+                "vt": "str"
+            },
+            {
+                "p": "historyYear",
+                "v": "2024",
+                "vt": "num"
+            },
+            {
+                "p": "replaceMode",
+                "v": "false",
+                "vt": "bool"
+            }
         ],
         "repeat": "",
         "crontab": "",
@@ -169,7 +253,11 @@
         "topic": "",
         "x": 160,
         "y": 280,
-        "wires": [[ "historic_check_token" ]]
+        "wires": [
+            [
+                "historic_check_token"
+            ]
+        ]
     },
     {
         "id": "historic_check_token",
@@ -185,8 +273,18 @@
         "libs": [],
         "x": 370,
         "y": 280,
-        "wires": [[ "historic_init" ], [ "link_historic_to_refresh" ]],
-        "outputLabels": ["valid", "expired"]
+        "wires": [
+            [
+                "historic_init"
+            ],
+            [
+                "link_historic_to_refresh"
+            ]
+        ],
+        "outputLabels": [
+            "valid",
+            "expired"
+        ]
     },
     {
         "id": "link_historic_to_refresh",
@@ -194,7 +292,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Token Refresh",
         "mode": "link",
-        "links": [ "link_refresh_in" ],
+        "links": [
+            "link_refresh_in"
+        ],
         "x": 535,
         "y": 320,
         "wires": []
@@ -204,10 +304,16 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← Refresh (historic)",
-        "links": [ "link_refresh_out_historic" ],
+        "links": [
+            "link_refresh_out_historic"
+        ],
         "x": 365,
         "y": 340,
-        "wires": [[ "historic_init" ]]
+        "wires": [
+            [
+                "historic_init"
+            ]
+        ]
     },
     {
         "id": "historic_init",
@@ -223,7 +329,11 @@
         "libs": [],
         "x": 570,
         "y": 280,
-        "wires": [[ "historic_build_request" ]]
+        "wires": [
+            [
+                "historic_build_request"
+            ]
+        ]
     },
     {
         "id": "historic_build_request",
@@ -239,7 +349,11 @@
         "libs": [],
         "x": 770,
         "y": 280,
-        "wires": [[ "historic_http" ]]
+        "wires": [
+            [
+                "historic_http"
+            ]
+        ]
     },
     {
         "id": "historic_http",
@@ -259,7 +373,11 @@
         "headers": [],
         "x": 950,
         "y": 280,
-        "wires": [[ "historic_process" ]]
+        "wires": [
+            [
+                "historic_process"
+            ]
+        ]
     },
     {
         "id": "historic_process",
@@ -276,12 +394,25 @@
         "x": 1130,
         "y": 280,
         "wires": [
-            [ "link_historic_to_format" ],
-            [ "historic_delay" ],
-            [ "historic_status" ],
-            [ "historic_retry_delay" ]
+            [
+                "link_historic_to_format"
+            ],
+            [
+                "historic_delay"
+            ],
+            [
+                "historic_status"
+            ],
+            [
+                "historic_retry_delay"
+            ]
         ],
-        "outputLabels": [ "activities", "next page", "done/error", "rate limited" ]
+        "outputLabels": [
+            "activities",
+            "next page",
+            "done/error",
+            "rate limited"
+        ]
     },
     {
         "id": "link_historic_to_format",
@@ -289,7 +420,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Format Chain",
         "mode": "link",
-        "links": [ "link_from_flows" ],
+        "links": [
+            "link_from_flows"
+        ],
         "x": 1275,
         "y": 260,
         "wires": []
@@ -313,7 +446,11 @@
         "outputs": 1,
         "x": 1140,
         "y": 340,
-        "wires": [[ "historic_build_request" ]]
+        "wires": [
+            [
+                "historic_build_request"
+            ]
+        ]
     },
     {
         "id": "historic_status",
@@ -351,7 +488,11 @@
         "outputs": 1,
         "x": 1320,
         "y": 380,
-        "wires": [[ "historic_build_request" ]]
+        "wires": [
+            [
+                "historic_build_request"
+            ]
+        ]
     },
     {
         "id": "comment_nightly",
@@ -369,12 +510,36 @@
         "z": "strava_obsidian_tab",
         "name": "Nightly Update (2 AM)",
         "props": [
-            { "p": "clientId", "v": "YOUR_CLIENT_ID", "vt": "str" },
-            { "p": "clientSecret", "v": "YOUR_CLIENT_SECRET", "vt": "str" },
-            { "p": "refreshToken", "v": "YOUR_REFRESH_TOKEN", "vt": "str" },
-            { "p": "vaultPath", "v": "/kms/10 PMS/11 Daily Notes", "vt": "str" },
-            { "p": "googleMapsKey", "v": "YOUR_GOOGLE_MAPS_KEY", "vt": "str" },
-            { "p": "lookbackDays", "v": "7", "vt": "num" }
+            {
+                "p": "clientId",
+                "v": "YOUR_CLIENT_ID",
+                "vt": "str"
+            },
+            {
+                "p": "clientSecret",
+                "v": "YOUR_CLIENT_SECRET",
+                "vt": "str"
+            },
+            {
+                "p": "refreshToken",
+                "v": "YOUR_REFRESH_TOKEN",
+                "vt": "str"
+            },
+            {
+                "p": "vaultPath",
+                "v": "/kms/10 PMS/11 Daily Notes",
+                "vt": "str"
+            },
+            {
+                "p": "googleMapsKey",
+                "v": "YOUR_GOOGLE_MAPS_KEY",
+                "vt": "str"
+            },
+            {
+                "p": "lookbackDays",
+                "v": "7",
+                "vt": "num"
+            }
         ],
         "repeat": "",
         "crontab": "0 2 * * *",
@@ -383,7 +548,11 @@
         "topic": "",
         "x": 160,
         "y": 480,
-        "wires": [[ "nightly_check_token" ]]
+        "wires": [
+            [
+                "nightly_check_token"
+            ]
+        ]
     },
     {
         "id": "nightly_check_token",
@@ -399,8 +568,18 @@
         "libs": [],
         "x": 370,
         "y": 480,
-        "wires": [[ "nightly_init" ], [ "link_nightly_to_refresh" ]],
-        "outputLabels": ["valid", "expired"]
+        "wires": [
+            [
+                "nightly_init"
+            ],
+            [
+                "link_nightly_to_refresh"
+            ]
+        ],
+        "outputLabels": [
+            "valid",
+            "expired"
+        ]
     },
     {
         "id": "link_nightly_to_refresh",
@@ -408,7 +587,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Token Refresh",
         "mode": "link",
-        "links": [ "link_refresh_in" ],
+        "links": [
+            "link_refresh_in"
+        ],
         "x": 535,
         "y": 520,
         "wires": []
@@ -418,10 +599,16 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← Refresh (nightly)",
-        "links": [ "link_refresh_out_nightly" ],
+        "links": [
+            "link_refresh_out_nightly"
+        ],
         "x": 365,
         "y": 540,
-        "wires": [[ "nightly_init" ]]
+        "wires": [
+            [
+                "nightly_init"
+            ]
+        ]
     },
     {
         "id": "nightly_init",
@@ -437,7 +624,11 @@
         "libs": [],
         "x": 570,
         "y": 480,
-        "wires": [[ "nightly_build_request" ]]
+        "wires": [
+            [
+                "nightly_build_request"
+            ]
+        ]
     },
     {
         "id": "nightly_build_request",
@@ -453,7 +644,11 @@
         "libs": [],
         "x": 770,
         "y": 480,
-        "wires": [[ "nightly_http" ]]
+        "wires": [
+            [
+                "nightly_http"
+            ]
+        ]
     },
     {
         "id": "nightly_http",
@@ -473,7 +668,11 @@
         "headers": [],
         "x": 950,
         "y": 480,
-        "wires": [[ "nightly_process" ]]
+        "wires": [
+            [
+                "nightly_process"
+            ]
+        ]
     },
     {
         "id": "nightly_process",
@@ -490,12 +689,25 @@
         "x": 1130,
         "y": 480,
         "wires": [
-            [ "link_nightly_to_format" ],
-            [ "nightly_delay" ],
-            [ "nightly_status" ],
-            [ "nightly_retry_delay" ]
+            [
+                "link_nightly_to_format"
+            ],
+            [
+                "nightly_delay"
+            ],
+            [
+                "nightly_status"
+            ],
+            [
+                "nightly_retry_delay"
+            ]
         ],
-        "outputLabels": [ "activities", "next page", "done/error", "rate limited" ]
+        "outputLabels": [
+            "activities",
+            "next page",
+            "done/error",
+            "rate limited"
+        ]
     },
     {
         "id": "link_nightly_to_format",
@@ -503,7 +715,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Format Chain",
         "mode": "link",
-        "links": [ "link_from_flows" ],
+        "links": [
+            "link_from_flows"
+        ],
         "x": 1275,
         "y": 460,
         "wires": []
@@ -527,7 +741,11 @@
         "outputs": 1,
         "x": 1140,
         "y": 540,
-        "wires": [[ "nightly_build_request" ]]
+        "wires": [
+            [
+                "nightly_build_request"
+            ]
+        ]
     },
     {
         "id": "nightly_status",
@@ -565,7 +783,11 @@
         "outputs": 1,
         "x": 1320,
         "y": 580,
-        "wires": [[ "nightly_build_request" ]]
+        "wires": [
+            [
+                "nightly_build_request"
+            ]
+        ]
     },
     {
         "id": "comment_refresh",
@@ -582,10 +804,18 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← Needs Refresh",
-        "links": [ "link_poll_to_refresh", "link_historic_to_refresh", "link_nightly_to_refresh" ],
+        "links": [
+            "link_poll_to_refresh",
+            "link_historic_to_refresh",
+            "link_nightly_to_refresh"
+        ],
         "x": 105,
         "y": 680,
-        "wires": [[ "build_refresh_request" ]]
+        "wires": [
+            [
+                "build_refresh_request"
+            ]
+        ]
     },
     {
         "id": "build_refresh_request",
@@ -601,7 +831,11 @@
         "libs": [],
         "x": 300,
         "y": 680,
-        "wires": [[ "refresh_http" ]]
+        "wires": [
+            [
+                "refresh_http"
+            ]
+        ]
     },
     {
         "id": "refresh_http",
@@ -621,7 +855,11 @@
         "headers": [],
         "x": 510,
         "y": 680,
-        "wires": [[ "store_tokens" ]]
+        "wires": [
+            [
+                "store_tokens"
+            ]
+        ]
     },
     {
         "id": "store_tokens",
@@ -637,7 +875,11 @@
         "libs": [],
         "x": 690,
         "y": 680,
-        "wires": [[ "refresh_route" ]]
+        "wires": [
+            [
+                "refresh_route"
+            ]
+        ]
     },
     {
         "id": "refresh_route",
@@ -647,17 +889,43 @@
         "property": "_source",
         "propertyType": "msg",
         "rules": [
-            { "t": "eq", "v": "poll", "vt": "str" },
-            { "t": "eq", "v": "historic", "vt": "str" },
-            { "t": "eq", "v": "nightly", "vt": "str" }
+            {
+                "t": "eq",
+                "v": "poll",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "historic",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "nightly",
+                "vt": "str"
+            }
         ],
         "checkall": false,
         "repair": false,
         "outputs": 3,
         "x": 870,
         "y": 680,
-        "wires": [[ "link_refresh_out_poll" ], [ "link_refresh_out_historic" ], [ "link_refresh_out_nightly" ]],
-        "outputLabels": [ "poll", "historic", "nightly" ]
+        "wires": [
+            [
+                "link_refresh_out_poll"
+            ],
+            [
+                "link_refresh_out_historic"
+            ],
+            [
+                "link_refresh_out_nightly"
+            ]
+        ],
+        "outputLabels": [
+            "poll",
+            "historic",
+            "nightly"
+        ]
     },
     {
         "id": "link_refresh_out_poll",
@@ -665,7 +933,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Poll (refreshed)",
         "mode": "link",
-        "links": [ "link_refresh_to_poll" ],
+        "links": [
+            "link_refresh_to_poll"
+        ],
         "x": 1035,
         "y": 660,
         "wires": []
@@ -676,7 +946,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Historic (refreshed)",
         "mode": "link",
-        "links": [ "link_refresh_to_historic" ],
+        "links": [
+            "link_refresh_to_historic"
+        ],
         "x": 1035,
         "y": 700,
         "wires": []
@@ -687,7 +959,9 @@
         "z": "strava_obsidian_tab",
         "name": "→ Nightly (refreshed)",
         "mode": "link",
-        "links": [ "link_refresh_to_nightly" ],
+        "links": [
+            "link_refresh_to_nightly"
+        ],
         "x": 1035,
         "y": 740,
         "wires": []
@@ -707,10 +981,18 @@
         "type": "link in",
         "z": "strava_obsidian_tab",
         "name": "← From Flows",
-        "links": [ "link_to_format", "link_historic_to_format", "link_nightly_to_format" ],
+        "links": [
+            "link_to_format",
+            "link_historic_to_format",
+            "link_nightly_to_format"
+        ],
         "x": 105,
         "y": 840,
-        "wires": [[ "api_rate_queue" ]]
+        "wires": [
+            [
+                "api_rate_queue"
+            ]
+        ]
     },
     {
         "id": "api_rate_queue",
@@ -731,7 +1013,11 @@
         "outputs": 1,
         "x": 170,
         "y": 870,
-        "wires": [[ "detail_build_request" ]]
+        "wires": [
+            [
+                "detail_build_request"
+            ]
+        ]
     },
     {
         "id": "detail_build_request",
@@ -747,7 +1033,11 @@
         "libs": [],
         "x": 280,
         "y": 840,
-        "wires": [[ "detail_http" ]]
+        "wires": [
+            [
+                "detail_http"
+            ]
+        ]
     },
     {
         "id": "detail_http",
@@ -767,7 +1057,11 @@
         "headers": [],
         "x": 470,
         "y": 840,
-        "wires": [[ "detail_merge" ]]
+        "wires": [
+            [
+                "detail_merge"
+            ]
+        ]
     },
     {
         "id": "detail_merge",
@@ -783,8 +1077,18 @@
         "libs": [],
         "x": 640,
         "y": 840,
-        "wires": [[ "format_activity" ], [ "detail_retry_delay" ]],
-        "outputLabels": [ "ok", "rate limited" ]
+        "wires": [
+            [
+                "format_activity"
+            ],
+            [
+                "detail_retry_delay"
+            ]
+        ],
+        "outputLabels": [
+            "ok",
+            "rate limited"
+        ]
     },
     {
         "id": "detail_retry_delay",
@@ -805,14 +1109,18 @@
         "outputs": 1,
         "x": 640,
         "y": 870,
-        "wires": [[ "detail_build_request" ]]
+        "wires": [
+            [
+                "detail_build_request"
+            ]
+        ]
     },
     {
         "id": "format_activity",
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Format Activity",
-        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse ISO8601 local time\nconst d = new Date(act.start_date_local);\nconst year = d.getFullYear();\nconst month = String(d.getMonth() + 1).padStart(2, '0');\nconst day = String(d.getDate()).padStart(2, '0');\nconst hours = String(d.getHours()).padStart(2, '0');\nconst minutes = String(d.getMinutes()).padStart(2, '0');\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '🏃', 'Ride': '🚴', 'Swim': '🏊',\n    'Hike': '⛰️', 'Walk': '🚶', 'Yoga': '🧘',\n    'WeightTraining': '🏋️', 'Workout': '🏋️'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '🏃';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elapsed time formatted\nconst elapsedSec = act.elapsed_time || 0;\nlet elapsedStr = '';\nif (elapsedSec > 0 && elapsedSec !== totalSec) {\n    const eHrs = Math.floor(elapsedSec / 3600);\n    const eMins = Math.floor((elapsedSec % 3600) / 60);\n    const eSecs = elapsedSec % 60;\n    if (eHrs > 0) {\n        elapsedStr = eHrs + 'h ' + eMins + 'm ' + eSecs + 's';\n    } else {\n        elapsedStr = eMins + 'm ' + eSecs + 's';\n    }\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Description (from detail endpoint)\nif (act.description && act.description.trim().length > 0) {\n    lines.push('\\t- ' + act.description.trim().replace(/\\n/g, ' '));\n}\n\n// Detail line 1: distance, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: moving time, elapsed time\nconst detail2 = [];\ndetail2.push('**Moving Time:** ' + timeStr);\nif (elapsedStr) detail2.push('**Elapsed Time:** ' + elapsedStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: pace/speed, heart rate\nconst detail3 = [];\nif (paceOrSpeed) detail3.push(paceOrSpeed);\nif (hrStr) detail3.push(hrStr);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Detail line 4: kudos, comments (only non-zero values, omit line if all zero)\nconst detail4 = [];\nif (act.kudos_count) detail4.push('**Kudos:** ' + act.kudos_count);\nif (act.comment_count) detail4.push('**Comments:** ' + act.comment_count);\nif (detail4.length > 0) {\n    lines.push('\\t- ' + detail4.join(' | '));\n}\n\n// Map: static image if Google Maps key configured, otherwise OSM link\nconst googleMapsKey = flow.get('googleMapsKey');\nconst polyline = act.map && act.map.summary_polyline;\nif (polyline && googleMapsKey && googleMapsKey !== 'YOUR_GOOGLE_MAPS_KEY') {\n    const encodedPolyline = encodeURIComponent(polyline);\n    lines.push('\\t- ![Map](https://maps.googleapis.com/maps/api/staticmap?size=600x300&path=weight:3%7Ccolor:red%7Cenc:' + encodedPolyline + '&key=' + googleMapsKey + ')');\n} else if (act.start_latlng && act.start_latlng.length === 2) {\n    const lat = act.start_latlng[0].toFixed(4);\n    const lng = act.start_latlng[1].toFixed(4);\n    lines.push('\\t- [Map](https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=15/' + lat + '/' + lng + ')');\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
+        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse local time directly from string (Strava's start_date_local has a Z suffix\n// but contains local time — using new Date() would apply a timezone offset)\nconst localStr = (act.start_date_local || '').replace('Z', '');\nconst [datePart, timePart] = localStr.split('T');\nconst [year, month, day] = datePart.split('-');\nconst [hours, minutes] = timePart ? timePart.split(':') : ['00', '00'];\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '🏃', 'Ride': '🚴', 'Swim': '🏊',\n    'Hike': '⛰️', 'Walk': '🚶', 'Yoga': '🧘',\n    'WeightTraining': '🏋️', 'Workout': '🏋️'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '🏃';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elapsed time formatted\nconst elapsedSec = act.elapsed_time || 0;\nlet elapsedStr = '';\nif (elapsedSec > 0 && elapsedSec !== totalSec) {\n    const eHrs = Math.floor(elapsedSec / 3600);\n    const eMins = Math.floor((elapsedSec % 3600) / 60);\n    const eSecs = elapsedSec % 60;\n    if (eHrs > 0) {\n        elapsedStr = eHrs + 'h ' + eMins + 'm ' + eSecs + 's';\n    } else {\n        elapsedStr = eMins + 'm ' + eSecs + 's';\n    }\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Description (from detail endpoint)\nif (act.description && act.description.trim().length > 0) {\n    lines.push('\\t- ' + act.description.trim().replace(/\\n/g, ' '));\n}\n\n// Detail line 1: distance, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: moving time, elapsed time\nconst detail2 = [];\ndetail2.push('**Moving Time:** ' + timeStr);\nif (elapsedStr) detail2.push('**Elapsed Time:** ' + elapsedStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: pace/speed, heart rate\nconst detail3 = [];\nif (paceOrSpeed) detail3.push(paceOrSpeed);\nif (hrStr) detail3.push(hrStr);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Detail line 4: kudos, comments (only non-zero values, omit line if all zero)\nconst detail4 = [];\nif (act.kudos_count) detail4.push('**Kudos:** ' + act.kudos_count);\nif (act.comment_count) detail4.push('**Comments:** ' + act.comment_count);\nif (detail4.length > 0) {\n    lines.push('\\t- ' + detail4.join(' | '));\n}\n\n// Map: static image if Google Maps key configured, otherwise OSM link\nconst googleMapsKey = flow.get('googleMapsKey');\nconst polyline = act.map && act.map.summary_polyline;\nif (polyline && googleMapsKey && googleMapsKey !== 'YOUR_GOOGLE_MAPS_KEY') {\n    const encodedPolyline = encodeURIComponent(polyline);\n    lines.push('\\t- ![Map](https://maps.googleapis.com/maps/api/staticmap?size=600x300&path=weight:3%7Ccolor:red%7Cenc:' + encodedPolyline + '&key=' + googleMapsKey + ')');\n} else if (act.start_latlng && act.start_latlng.length === 2) {\n    const lat = act.start_latlng[0].toFixed(4);\n    const lng = act.start_latlng[1].toFixed(4);\n    lines.push('\\t- [Map](https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=15/' + lat + '/' + lng + ')');\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -821,7 +1129,11 @@
         "libs": [],
         "x": 820,
         "y": 840,
-        "wires": [[ "build_filename" ]]
+        "wires": [
+            [
+                "build_filename"
+            ]
+        ]
     },
     {
         "id": "build_filename",
@@ -837,7 +1149,11 @@
         "libs": [],
         "x": 1010,
         "y": 840,
-        "wires": [[ "write_queue" ]]
+        "wires": [
+            [
+                "write_queue"
+            ]
+        ]
     },
     {
         "id": "write_queue",
@@ -858,7 +1174,11 @@
         "outputs": 1,
         "x": 1180,
         "y": 840,
-        "wires": [[ "file_read" ]]
+        "wires": [
+            [
+                "file_read"
+            ]
+        ]
     },
     {
         "id": "file_read",
@@ -874,7 +1194,11 @@
         "allProps": true,
         "x": 280,
         "y": 900,
-        "wires": [[ "insert_into_notes" ]]
+        "wires": [
+            [
+                "insert_into_notes"
+            ]
+        ]
     },
     {
         "id": "insert_into_notes",
@@ -890,7 +1214,11 @@
         "libs": [],
         "x": 480,
         "y": 900,
-        "wires": [[ "file_write" ]]
+        "wires": [
+            [
+                "file_write"
+            ]
+        ]
     },
     {
         "id": "file_write",
@@ -905,7 +1233,11 @@
         "encoding": "none",
         "x": 660,
         "y": 900,
-        "wires": [[ "write_debug" ]]
+        "wires": [
+            [
+                "write_debug"
+            ]
+        ]
     },
     {
         "id": "write_debug",
