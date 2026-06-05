@@ -43,13 +43,8 @@
                 "vt": "str"
             },
             {
-                "p": "geoapifyKey",
-                "v": "YOUR_GEOAPIFY_KEY",
-                "vt": "str"
-            },
-            {
-                "p": "mapsPath",
-                "v": "/kms/10 PMS/11 Daily Notes/maps",
+                "p": "geojsonPath",
+                "v": "/kms/10 PMS/11 Daily Notes/geojson",
                 "vt": "str"
             }
         ],
@@ -71,7 +66,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geoapifyKey', msg.geoapifyKey);\nflow.set('mapsPath', msg.mapsPath);\nflow.set('replaceMode', false);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geojsonPath', msg.geojsonPath);\nflow.set('replaceMode', false);\n\n// Seed persisted refresh token from inject on first run\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'poll';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -246,13 +241,8 @@
                 "vt": "bool"
             },
             {
-                "p": "geoapifyKey",
-                "v": "YOUR_GEOAPIFY_KEY",
-                "vt": "str"
-            },
-            {
-                "p": "mapsPath",
-                "v": "/kms/10 PMS/11 Daily Notes/maps",
+                "p": "geojsonPath",
+                "v": "/kms/10 PMS/11 Daily Notes/geojson",
                 "vt": "str"
             }
         ],
@@ -274,7 +264,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geoapifyKey', msg.geoapifyKey);\nflow.set('mapsPath', msg.mapsPath);\nflow.set('replaceMode', msg.replaceMode);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geojsonPath', msg.geojsonPath);\nflow.set('replaceMode', msg.replaceMode);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'historic';\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -546,13 +536,8 @@
                 "vt": "num"
             },
             {
-                "p": "geoapifyKey",
-                "v": "YOUR_GEOAPIFY_KEY",
-                "vt": "str"
-            },
-            {
-                "p": "mapsPath",
-                "v": "/kms/10 PMS/11 Daily Notes/maps",
+                "p": "geojsonPath",
+                "v": "/kms/10 PMS/11 Daily Notes/geojson",
                 "vt": "str"
             }
         ],
@@ -574,7 +559,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Check Token",
-        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geoapifyKey', msg.geoapifyKey);\nflow.set('mapsPath', msg.mapsPath);\nflow.set('replaceMode', true);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'nightly';\nmsg.lookbackDays = msg.lookbackDays || 7;\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
+        "func": "if (!msg.clientId || msg.clientId === 'YOUR_CLIENT_ID') {\n    node.warn('Strava credentials not set. Edit the inject node.');\n    return null;\n}\n\nflow.set('clientId', msg.clientId);\nflow.set('clientSecret', msg.clientSecret);\nflow.set('vaultPath', msg.vaultPath);\nflow.set('geojsonPath', msg.geojsonPath);\nflow.set('replaceMode', true);\n\nconst storedRefresh = flow.get('refreshToken', 'file');\nif (!storedRefresh) {\n    flow.set('refreshToken', msg.refreshToken, 'file');\n}\n\nconst expiresAt = flow.get('expiresAt', 'file') || 0;\nconst now = Math.floor(Date.now() / 1000);\n\nmsg._source = 'nightly';\nmsg.lookbackDays = msg.lookbackDays || 7;\n\nif (now >= expiresAt - 60) {\n    return [null, msg];\n}\n\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -1135,7 +1120,7 @@
         "type": "function",
         "z": "strava_obsidian_tab",
         "name": "Format Activity",
-        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse local time directly from string (Strava's start_date_local has a Z suffix\n// but contains local time \u2014 using new Date() would apply a timezone offset)\nconst localStr = (act.start_date_local || '').replace('Z', '');\nconst [datePart, timePart] = localStr.split('T');\nconst [year, month, day] = datePart.split('-');\nconst [hours, minutes] = timePart ? timePart.split(':') : ['00', '00'];\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '\ud83c\udfc3', 'Ride': '\ud83d\udeb4', 'Swim': '\ud83c\udfca',\n    'Hike': '\u26f0\ufe0f', 'Walk': '\ud83d\udeb6', 'Yoga': '\ud83e\uddd8',\n    'WeightTraining': '\ud83c\udfcb\ufe0f', 'Workout': '\ud83c\udfcb\ufe0f'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '\ud83c\udfc3';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elapsed time formatted\nconst elapsedSec = act.elapsed_time || 0;\nlet elapsedStr = '';\nif (elapsedSec > 0 && elapsedSec !== totalSec) {\n    const eHrs = Math.floor(elapsedSec / 3600);\n    const eMins = Math.floor((elapsedSec % 3600) / 60);\n    const eSecs = elapsedSec % 60;\n    if (eHrs > 0) {\n        elapsedStr = eHrs + 'h ' + eMins + 'm ' + eSecs + 's';\n    } else {\n        elapsedStr = eMins + 'm ' + eSecs + 's';\n    }\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Description (from detail endpoint)\nif (act.description && act.description.trim().length > 0) {\n    lines.push('\\t- ' + act.description.trim().replace(/\\n/g, ' '));\n}\n\n// Detail line 1: distance, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: moving time, elapsed time\nconst detail2 = [];\ndetail2.push('**Moving Time:** ' + timeStr);\nif (elapsedStr) detail2.push('**Elapsed Time:** ' + elapsedStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: pace/speed, heart rate\nconst detail3 = [];\nif (paceOrSpeed) detail3.push(paceOrSpeed);\nif (hrStr) detail3.push(hrStr);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Detail line 4: kudos, comments (only non-zero values, omit line if all zero)\nconst detail4 = [];\nif (act.kudos_count) detail4.push('**Kudos:** ' + act.kudos_count);\nif (act.comment_count) detail4.push('**Comments:** ' + act.comment_count);\nif (detail4.length > 0) {\n    lines.push('\\t- ' + detail4.join(' | '));\n}\n\nconst geoapifyKey = flow.get('geoapifyKey');\nconst polyline = act.map && act.map.summary_polyline;\nif (polyline && geoapifyKey && geoapifyKey !== 'YOUR_GEOAPIFY_KEY') {\n    // Decode Google-encoded polyline \u2192 [[lng, lat], ...] at full 5dp precision\n    const allCoords = [];\n    let dlat = 0, dlng = 0, pi = 0;\n    while (pi < polyline.length) {\n        let shift = 0, result = 0, b;\n        do { b = polyline.charCodeAt(pi++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n        dlat += (result & 1) ? ~(result >> 1) : (result >> 1);\n        shift = 0; result = 0;\n        do { b = polyline.charCodeAt(pi++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n        dlng += (result & 1) ? ~(result >> 1) : (result >> 1);\n        allCoords.push([+(dlng / 1e5).toFixed(5), +(dlat / 1e5).toFixed(5)]);\n    }\n    // Geoapify static image: downsample to \u226440 pts at 3dp (1024-char API limit)\n    const mapStep = Math.max(1, Math.ceil(allCoords.length / 40));\n    const mapCoords = allCoords\n        .filter((_, i) => i % mapStep === 0 || i === allCoords.length - 1)\n        .map(([lng, lat]) => [+lng.toFixed(3), +lat.toFixed(3)]);\n    // Bounding box for Geoapify viewport\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [slng, slat] of mapCoords) {\n        if (slat < minLat) minLat = slat; if (slat > maxLat) maxLat = slat;\n        if (slng < minLng) minLng = slng; if (slng > maxLng) maxLng = slng;\n    }\n    const pad = 0.005;\n    const area = 'rect:' + (minLng - pad).toFixed(4) + ',' + (minLat - pad).toFixed(4)\n        + ',' + (maxLng + pad).toFixed(4) + ',' + (maxLat + pad).toFixed(4);\n    const mapGeojson = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: mapCoords },\n            properties: { stroke: 'blue' }\n        }]\n    });\n    // geojson.io link: use all decoded points at full precision (no API size limit)\n    const linkGeojson = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: allCoords },\n            properties: { stroke: 'blue' }\n        }]\n    });\n    const imgFilename = String(act.id) + '.jpg';\n    msg.mapImageUrl = 'https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=600&height=300'\n        + '&area=' + encodeURIComponent(area)\n        + '&geojson=' + encodeURIComponent(mapGeojson)\n        + '&apiKey=' + geoapifyKey;\n    msg.mapImagePath = flow.get('mapsPath') + '/' + imgFilename;\n    const geojsonLink = 'https://geojson.io/#data=data:application/json,' + linkGeojson;\n    lines.push('\\t- ![[' + imgFilename + ']] | [Map](<' + geojsonLink + '>)');\n} else {\n    // Fallback: OSM iframe using route bounding box (decoded from polyline) or start point\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    if (polyline) {\n        let lat = 0, lng = 0, idx = 0;\n        while (idx < polyline.length) {\n            let shift = 0, result = 0, b;\n            do { b = polyline.charCodeAt(idx++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n            lat += (result & 1) ? ~(result >> 1) : (result >> 1);\n            shift = 0; result = 0;\n            do { b = polyline.charCodeAt(idx++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n            lng += (result & 1) ? ~(result >> 1) : (result >> 1);\n            const rlat = lat / 1e5, rlng = lng / 1e5;\n            if (rlat < minLat) minLat = rlat; if (rlat > maxLat) maxLat = rlat;\n            if (rlng < minLng) minLng = rlng; if (rlng > maxLng) maxLng = rlng;\n        }\n    } else if (act.start_latlng && act.start_latlng.length === 2) {\n        const d = 0.02;\n        minLat = act.start_latlng[0] - d; maxLat = act.start_latlng[0] + d;\n        minLng = act.start_latlng[1] - d; maxLng = act.start_latlng[1] + d;\n    }\n    if (minLat !== Infinity) {\n        const pad = 0.005;\n        const bbox = (minLng - pad).toFixed(4) + ',' + (minLat - pad).toFixed(4)\n            + ',' + (maxLng + pad).toFixed(4) + ',' + (maxLat + pad).toFixed(4);\n        lines.push('\\t- <iframe width=\"600\" height=\"300\" frameborder=\"0\"'\n            + ' src=\"https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&layer=mapnik\"></iframe>');\n    }\n}\n\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
+        "func": "const act = msg.payload;\nif (!act || !act.start_date_local) {\n    return null;\n}\n\n// Parse local time directly from string (Strava's start_date_local has a Z suffix\n// but contains local time \u2014 using new Date() would apply a timezone offset)\nconst localStr = (act.start_date_local || '').replace('Z', '');\nconst [datePart, timePart] = localStr.split('T');\nconst [year, month, day] = datePart.split('-');\nconst [hours, minutes] = timePart ? timePart.split(':') : ['00', '00'];\n\n// Activity type emoji\nconst emojiMap = {\n    'Run': '\ud83c\udfc3', 'Ride': '\ud83d\udeb4', 'Swim': '\ud83c\udfca',\n    'Hike': '\u26f0\ufe0f', 'Walk': '\ud83d\udeb6', 'Yoga': '\ud83e\uddd8',\n    'WeightTraining': '\ud83c\udfcb\ufe0f', 'Workout': '\ud83c\udfcb\ufe0f'\n};\nconst type = act.type || 'Workout';\nconst emoji = emojiMap[type] || '\ud83c\udfc3';\n\n// Distance in km\nconst distKm = act.distance ? (act.distance / 1000).toFixed(2) : null;\n\n// Moving time formatted\nconst totalSec = act.moving_time || 0;\nconst hrs = Math.floor(totalSec / 3600);\nconst mins = Math.floor((totalSec % 3600) / 60);\nconst secs = totalSec % 60;\nlet timeStr;\nif (hrs > 0) {\n    timeStr = hrs + 'h ' + mins + 'm ' + secs + 's';\n} else {\n    timeStr = mins + 'm ' + secs + 's';\n}\n\n// Elapsed time formatted\nconst elapsedSec = act.elapsed_time || 0;\nlet elapsedStr = '';\nif (elapsedSec > 0 && elapsedSec !== totalSec) {\n    const eHrs = Math.floor(elapsedSec / 3600);\n    const eMins = Math.floor((elapsedSec % 3600) / 60);\n    const eSecs = elapsedSec % 60;\n    if (eHrs > 0) {\n        elapsedStr = eHrs + 'h ' + eMins + 'm ' + eSecs + 's';\n    } else {\n        elapsedStr = eMins + 'm ' + eSecs + 's';\n    }\n}\n\n// Elevation\nconst elev = act.total_elevation_gain ? Math.round(act.total_elevation_gain) : null;\n\n// Pace or speed\nlet paceOrSpeed = '';\nconst paceTypes = ['Run', 'Walk', 'Hike'];\nif (distKm && totalSec > 0) {\n    if (paceTypes.includes(type)) {\n        const paceSecPerKm = totalSec / (act.distance / 1000);\n        const paceMin = Math.floor(paceSecPerKm / 60);\n        const paceSec = Math.round(paceSecPerKm % 60);\n        paceOrSpeed = '**Pace:** ' + paceMin + ':' + String(paceSec).padStart(2, '0') + ' /km';\n    } else {\n        const speedKmh = ((act.distance / 1000) / (totalSec / 3600)).toFixed(1);\n        paceOrSpeed = '**Speed:** ' + speedKmh + ' km/h';\n    }\n}\n\n// Heart rate\nlet hrStr = '';\nif (act.average_heartrate) {\n    hrStr = '**Heart Rate:** ' + Math.round(act.average_heartrate);\n    if (act.max_heartrate) {\n        hrStr += ' / ' + Math.round(act.max_heartrate);\n    }\n    hrStr += ' bpm';\n}\n\n// Build lines\nconst lines = [];\nlines.push('- ' + hours + ':' + minutes + ' ' + emoji + ' [' + (act.name || 'Activity') + '](https://www.strava.com/activities/' + act.id + ') : ' + type + ' #strava');\n\n// Description (from detail endpoint)\nif (act.description && act.description.trim().length > 0) {\n    lines.push('\\t- ' + act.description.trim().replace(/\\n/g, ' '));\n}\n\n// Detail line 1: distance, elevation\nconst detail1 = [];\nif (distKm) detail1.push('**Distance:** ' + distKm + ' km');\nif (elev !== null) detail1.push('**Elevation:** ' + elev + ' m');\nif (detail1.length > 0) {\n    lines.push('\\t- ' + detail1.join(' | '));\n}\n\n// Detail line 2: moving time, elapsed time\nconst detail2 = [];\ndetail2.push('**Moving Time:** ' + timeStr);\nif (elapsedStr) detail2.push('**Elapsed Time:** ' + elapsedStr);\nif (detail2.length > 0) {\n    lines.push('\\t- ' + detail2.join(' | '));\n}\n\n// Detail line 3: pace/speed, heart rate\nconst detail3 = [];\nif (paceOrSpeed) detail3.push(paceOrSpeed);\nif (hrStr) detail3.push(hrStr);\nif (detail3.length > 0) {\n    lines.push('\\t- ' + detail3.join(' | '));\n}\n\n// Detail line 4: kudos, comments (only non-zero values, omit line if all zero)\nconst detail4 = [];\nif (act.kudos_count) detail4.push('**Kudos:** ' + act.kudos_count);\nif (act.comment_count) detail4.push('**Comments:** ' + act.comment_count);\nif (detail4.length > 0) {\n    lines.push('\\t- ' + detail4.join(' | '));\n}\n\nconst polyline = act.map && act.map.summary_polyline;\nif (polyline) {\n    // Decode Google-encoded polyline \u2192 [[lng, lat], ...] at full 5dp precision\n    const allCoords = [];\n    let dlat = 0, dlng = 0, pi = 0;\n    while (pi < polyline.length) {\n        let shift = 0, result = 0, b;\n        do { b = polyline.charCodeAt(pi++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n        dlat += (result & 1) ? ~(result >> 1) : (result >> 1);\n        shift = 0; result = 0;\n        do { b = polyline.charCodeAt(pi++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);\n        dlng += (result & 1) ? ~(result >> 1) : (result >> 1);\n        allCoords.push([+(dlng / 1e5).toFixed(5), +(dlat / 1e5).toFixed(5)]);\n    }\n    // Compute bounding box (coords are [lng, lat])\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [clng, clat] of allCoords) {\n        if (clat < minLat) minLat = clat; if (clat > maxLat) maxLat = clat;\n        if (clng < minLng) minLng = clng; if (clng > maxLng) maxLng = clng;\n    }\n    const midLat = (minLat + maxLat) / 2;\n    const midLng = (minLng + maxLng) / 2;\n    // Derive zoom to fill the frame from bbox span\n    const maxSpan = Math.max(maxLat - minLat, maxLng - minLng);\n    const defaultZoom = Math.max(1, Math.min(15, Math.floor(Math.log2(360 / maxSpan))));\n    // Build GeoJSON at full precision\n    const jsonFilename = String(act.id) + '.json';\n    msg.geojsonContent = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: allCoords },\n            properties: { stroke: '#0000ff' }\n        }]\n    });\n    msg.geojsonPath = flow.get('geojsonPath') + '/' + jsonFilename;\n    // Leaflet embed (tab-indented to sit within the activity list item)\n    lines.push('```leaflet');\n    lines.push('id: strava-' + act.id);\n    lines.push('geojson: [[' + jsonFilename + ']]');\n    lines.push('lat: ' + midLat.toFixed(5));\n    lines.push('long: ' + midLng.toFixed(5));\n    lines.push('maxZoom: 18');\n    lines.push('defaultZoom: ' + defaultZoom);\n    lines.push('tileServer:');\n    lines.push(' - https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png|Light');\n    lines.push(' - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png|Dark');\n    lines.push('```');\n}\nmsg.noteupdate = lines.join('\\n');\nmsg.activityId = String(act.id);\nmsg.payload = Date.now();\n\nmsg.dateStr = { year: String(year), month, day };\nmsg.files = { dailynotefile: year + '-' + month + '-' + day + '.md' };\n\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -1275,8 +1260,8 @@
         "id": "write_map_check",
         "type": "switch",
         "z": "strava_obsidian_tab",
-        "name": "has map image?",
-        "property": "mapImageUrl",
+        "name": "has geojson?",
+        "property": "geojsonContent",
         "propertyType": "msg",
         "rules": [
             {
@@ -1304,38 +1289,15 @@
         "id": "write_map_request",
         "type": "function",
         "z": "strava_obsidian_tab",
-        "name": "build map fetch",
-        "func": "msg.url = msg.mapImageUrl;\nmsg.filename = msg.mapImagePath;\nreturn msg;",
+        "name": "build geojson write",
+        "func": "msg.payload = msg.geojsonContent;\nmsg.filename = msg.geojsonPath;\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "x": 1040,
         "y": 900,
         "wires": [
             [
-                "write_map_fetch"
-            ]
-        ]
-    },
-    {
-        "id": "write_map_fetch",
-        "type": "http request",
-        "z": "strava_obsidian_tab",
-        "name": "Geoapify Static Map",
-        "method": "GET",
-        "ret": "bin",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "x": 1230,
-        "y": 900,
-        "wires": [
-            [
-                "validate_map_response"
+                "write_map_file"
             ]
         ]
     },
@@ -1343,13 +1305,13 @@
         "id": "write_map_file",
         "type": "file",
         "z": "strava_obsidian_tab",
-        "name": "Write Map Image",
+        "name": "Write GeoJSON File",
         "filename": "filename",
         "filenameType": "msg",
         "appendNewline": false,
         "createDir": true,
         "overwriteFile": "true",
-        "encoding": "none",
+        "encoding": "utf8",
         "x": 1600,
         "y": 900,
         "wires": [
@@ -1362,7 +1324,7 @@
         "id": "write_map_debug",
         "type": "debug",
         "z": "strava_obsidian_tab",
-        "name": "Map Saved",
+        "name": "GeoJSON Saved",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -1374,21 +1336,5 @@
         "x": 1790,
         "y": 900,
         "wires": []
-    },
-    {
-        "id": "validate_map_response",
-        "type": "function",
-        "z": "strava_obsidian_tab",
-        "name": "check PNG response",
-        "func": "if (msg.statusCode !== 200) {\n    node.warn('Map fetch failed ' + msg.statusCode + ': ' + msg.payload.toString().slice(0, 200));\n    return null;\n}\n// Accept JPEG (FF D8) or PNG (89 50)\nconst b0 = msg.payload[0], b1 = msg.payload[1];\nif (!msg.payload || !((b0 === 0x89 && b1 === 0x50) || (b0 === 0xFF && b1 === 0xD8))) {\n    node.warn('Map response is not an image: ' + msg.payload.toString().slice(0, 200));\n    return null;\n}\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "x": 1415,
-        "y": 900,
-        "wires": [
-            [
-                "write_map_file"
-            ]
-        ]
     }
 ]
