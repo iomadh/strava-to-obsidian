@@ -1,15 +1,15 @@
 [
     {
-        "id": "garmin_activities_tab",
+        "id": "439b184fe3174610",
         "type": "tab",
         "label": "Garmin Activities → Obsidian",
         "disabled": false,
         "info": "Syncs Garmin Connect activities as individual Obsidian notes.\n\nPrerequisite: The Garmin → Obsidian (wellness) flow must be set up first.\nCredentials are read from garmin.credentials.json written by that flow's Setup inject.\n\nSetup:\n1. Ensure the Garmin → Obsidian wellness flow Setup has been run (creates garmin.credentials.json).\n2. Edit the Setup inject node with the full path to garmin-activities-fetch.js,\n   the path to your Activities vault folder, and your daily notes folder.\n3. Click Setup inject to store config.\n4. Click Poll inject to fetch recent activities.\n5. Use Historic Bulk Load to backfill a full year.\n\n_ActivityLog.md (create once in Obsidian):\n---\nbases:\n  source: Activities\n  filter:\n    activity_id: { exists: true }\n  sort:\n    - date: desc\n  columns:\n    - garmin_date\n    - garmin_name\n    - garmin_type\n    - garmin_gear\n    - garmin_dist_km\n    - garmin_elv_m\n    - garmin_moving_time\n    - garmin_speed_kmh\n    - garmin_max_speed_kmh\n---"
     },
     {
-        "id": "act_comment_setup",
+        "id": "e52935aa79668279",
         "type": "comment",
-        "z": "garmin_activities_tab",
+        "z": "439b184fe3174610",
         "name": "── Setup ────────────────────────────────────────────────────",
         "info": "",
         "x": 270,
@@ -17,15 +17,634 @@
         "wires": []
     },
     {
-        "id": "act_setup_inject",
+        "id": "09141ec4643a6e19",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Store Config",
+        "func": "if (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-activities-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('actScriptPath', msg.scriptPath);\nflow.set('actActivitiesPath', msg.activitiesPath || '/kms/10 PMS/Activities');\nflow.set('actGeojsonPath', msg.geojsonPath || '/kms/10 PMS/Attachments/Garmin');\nflow.set('actDailyNotesPath', msg.dailyNotesPath || '/kms/10 PMS/11 Daily Notes');\nnode.status({ fill: 'green', shape: 'dot', text: 'Config stored' });\nreturn null;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "88df99d918004857",
+        "type": "comment",
+        "z": "439b184fe3174610",
+        "name": "── Flow 1: Active Polling (hourly) ──────────────────────────",
+        "info": "",
+        "x": 290,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "ed9e07bd7814cf24",
         "type": "inject",
-        "z": "garmin_activities_tab",
+        "z": "439b184fe3174610",
+        "name": "Poll Hourly",
+        "props": [],
+        "repeat": "",
+        "crontab": "0 * * * *",
+        "once": true,
+        "onceDelay": "5",
+        "topic": "",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "1f5a3c3688b4c3d4"
+            ]
+        ]
+    },
+    {
+        "id": "1f5a3c3688b4c3d4",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Build Poll Command",
+        "func": "const scriptPath = flow.get('actScriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nmsg.payload = scriptPath + ' --limit 50';\nmsg._source = 'poll';\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 220,
+        "wires": [
+            [
+                "03daa756efbe023f"
+            ]
+        ]
+    },
+    {
+        "id": "03daa756efbe023f",
+        "type": "exec",
+        "z": "439b184fe3174610",
+        "command": "node",
+        "addpay": true,
+        "append": "",
+        "useSpawn": false,
+        "timer": "120",
+        "winHide": true,
+        "oldrc": false,
+        "name": "Run garmin-activities-fetch.js",
+        "x": 570,
+        "y": 220,
+        "wires": [
+            [
+                "0e0d63801a5c3255"
+            ],
+            [
+                "87befda1cb924a9d"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "31a8cbcb0184c7e3",
+        "type": "comment",
+        "z": "439b184fe3174610",
+        "name": "── Flow 2: Historic Bulk Load (manual) ──────────────────────",
+        "info": "",
+        "x": 300,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "02533e068b535aa5",
+        "type": "inject",
+        "z": "439b184fe3174610",
+        "name": "Load History (manual)",
+        "props": [
+            {
+                "p": "historyYear",
+                "v": "2024",
+                "vt": "num"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "topic": "",
+        "x": 170,
+        "y": 380,
+        "wires": [
+            [
+                "1c696bdb498d7641"
+            ]
+        ]
+    },
+    {
+        "id": "1c696bdb498d7641",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Build Historic Command",
+        "func": "const scriptPath = flow.get('actScriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nif (!msg.historyYear) { node.warn('Set historyYear on the inject node.'); return null; }\nconst y = String(msg.historyYear);\nmsg.payload = scriptPath + ' --start ' + y + '-01-01 --end ' + y + '-12-31';\nmsg._source = 'historic';\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 380,
+        "wires": [
+            [
+                "64f42bf11786bbad"
+            ]
+        ]
+    },
+    {
+        "id": "64f42bf11786bbad",
+        "type": "exec",
+        "z": "439b184fe3174610",
+        "command": "node",
+        "addpay": true,
+        "append": "",
+        "useSpawn": false,
+        "timer": "300",
+        "winHide": true,
+        "oldrc": false,
+        "name": "Run garmin-activities-fetch.js",
+        "x": 600,
+        "y": 380,
+        "wires": [
+            [
+                "0e0d63801a5c3255"
+            ],
+            [
+                "87befda1cb924a9d"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "87befda1cb924a9d",
+        "type": "debug",
+        "z": "439b184fe3174610",
+        "name": "Exec Error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1110,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "c6981b2509e3eda3",
+        "type": "comment",
+        "z": "439b184fe3174610",
+        "name": "── Shared: Parse & Process Chain ────────────────────────────",
+        "info": "",
+        "x": 290,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "0e0d63801a5c3255",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Parse Activities JSON",
+        "func": "const raw = (msg.payload || '').trim();\nif (!raw) {\n    node.warn('garmin-activities-fetch: no output (check Exec Error debug)');\n    return [null, { payload: 'No output from script' }];\n}\nlet activities;\ntry { activities = JSON.parse(raw); } catch (e) {\n    node.warn('JSON parse error: ' + raw.substring(0, 200));\n    return [null, { payload: 'JSON parse error: ' + raw.substring(0, 200) }];\n}\nif (!Array.isArray(activities) || activities.length === 0) {\n    return [null, { payload: 'No activities returned' }];\n}\nnode.status({ fill: 'green', shape: 'dot', text: activities.length + ' activities' });\nmsg.payload = activities;\nreturn [msg, null];",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "a75ff9a5a15733d9"
+            ],
+            [
+                "0672b627f41599da"
+            ]
+        ]
+    },
+    {
+        "id": "0672b627f41599da",
+        "type": "debug",
+        "z": "439b184fe3174610",
+        "name": "Parse Status",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "a75ff9a5a15733d9",
+        "type": "split",
+        "z": "439b184fe3174610",
+        "name": "Each Activity",
+        "splt": "\\n",
+        "spltType": "str",
+        "arraySplt": 1,
+        "arraySpltType": "len",
+        "stream": false,
+        "addname": "",
+        "x": 140,
+        "y": 520,
+        "wires": [
+            [
+                "18ec0fa81e570a7b"
+            ]
+        ]
+    },
+    {
+        "id": "18ec0fa81e570a7b",
+        "type": "delay",
+        "z": "439b184fe3174610",
+        "name": "Queue (1/s)",
+        "pauseType": "rate",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 340,
+        "y": 520,
+        "wires": [
+            [
+                "53c5998ae042fe46"
+            ]
+        ]
+    },
+    {
+        "id": "53c5998ae042fe46",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Format Activity Note",
+        "func": "const a = msg.payload;\nconst activitiesPath = flow.get('actActivitiesPath') || '/kms/10 PMS/Activities';\n\nfunction slugify(s) {\n    return (s || '').toLowerCase()\n        .replace(/[^a-z0-9]+/g, '-')\n        .replace(/^-+|-+$/g, '')\n        .substring(0, 50);\n}\n\nconst date     = a.date || '';\nconst parts    = date.split('-');\nconst yyyy     = parts[0] || 'unknown';\nconst mm       = parts[1] || 'unknown';\nconst sport    = ((a.sport_type || a.type || 'activity').toLowerCase().replace(/[^a-z0-9]/g, '-'));\nconst slug     = slugify(a.name);\nconst noteFile = date.replace(/-/g, '') + '-' + String(a.activityId) + '-' + sport + '-' + slug + '.md';\nmsg.activityPath    = activitiesPath + '/' + yyyy + '/' + mm + '/' + noteFile;\nmsg.activityRelPath = 'Activities/' + yyyy + '/' + mm + '/' + noteFile.replace('.md', '');\nmsg.activityWikiLink = '[[' + msg.activityRelPath + '|' + (a.name || 'Activity') + ']]';\n\n// Build YAML frontmatter (no quotes on time strings)\nconst lines = ['---'];\nlines.push('garmin_activity_id: ' + a.activityId);\nif (a.date)              lines.push('garmin_date: ' + a.date);\nif (a.type)              lines.push('garmin_type: ' + a.type);\nif (a.sport_type)        lines.push('garmin_sport_type: ' + a.sport_type);\nif (a.gear)              lines.push('garmin_gear: ' + a.gear);\nlines.push('garmin_name: ' + (a.name || ''));\nif (a.description)       lines.push('garmin_description: ' + a.description.replace(/\\n/g, ' '));\nif (a.dist_km != null)       lines.push('garmin_dist_km: ' + a.dist_km);\nif (a.elv_m != null)         lines.push('garmin_elv_m: ' + a.elv_m);\nif (a.elapsed_time)          lines.push('garmin_elapsed_time: ' + a.elapsed_time);\nif (a.moving_time)           lines.push('garmin_moving_time: ' + a.moving_time);\nif (a.start_time)            lines.push('garmin_start_time: ' + a.start_time);\nif (a.day_of_week)           lines.push('garmin_day_of_week: ' + a.day_of_week);\nif (a.speed_kmh != null)     lines.push('garmin_speed_kmh: ' + a.speed_kmh);\nif (a.max_speed_kmh != null) lines.push('garmin_max_speed_kmh: ' + a.max_speed_kmh);\nif (a.avg_hr)              lines.push('garmin_avg_hr: ' + a.avg_hr);\nif (a.max_hr)              lines.push('garmin_max_hr: ' + a.max_hr);\nif (a.calories)            lines.push('garmin_calories: ' + a.calories);\nif (a.elv_loss_m != null)  lines.push('garmin_elv_loss_m: ' + a.elv_loss_m);\nif (a.aerobic_te != null)  lines.push('garmin_aerobic_te: ' + (+a.aerobic_te).toFixed(1));\nif (a.anaerobic_te != null) lines.push('garmin_anaerobic_te: ' + (+a.anaerobic_te).toFixed(1));\nif (a.vo2max)              lines.push('garmin_vo2max: ' + a.vo2max);\nif (a.avg_power)           lines.push('garmin_avg_power: ' + a.avg_power);\nif (a.cadence)             lines.push('garmin_cadence: ' + a.cadence);\nlines.push('garmin_refresh: false');\nlines.push('---');\nlines.push('');\n\n// Display date: \"Monday 16 February 2026\"\nconst MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nlet displayDate = a.date || '';\nif (a.date && parts.length === 3) {\n    const d  = parseInt(parts[2], 10);\n    const mo = parseInt(parts[1], 10) - 1;\n    displayDate = (a.day_of_week ? a.day_of_week + ' ' : '') + d + ' ' + MONTHS[mo] + ' ' + yyyy;\n}\nconst startHHMM = (a.start_time || '').substring(0, 5);\nconst gearSuffix = a.gear ? ' · ' + a.gear : '';\nconst subtitle = '**' + (a.type || 'Activity') + '**'\n    + (displayDate ? ' · ' + displayDate : '')\n    + (startHHMM   ? ' · ' + startHHMM   : '')\n    + gearSuffix;\n\n// Comma-format large integers (e.g. 1319 → \"1,319\")\nfunction fmtInt(n) {\n    return String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n}\n\n// Avg moving speed: dist_km / moving hours\nfunction calcMvgSpeed(dist_km, moving_time) {\n    if (!dist_km || !moving_time) return null;\n    const p = moving_time.split(':').map(Number);\n    if (p.length !== 3) return null;\n    const hrs = p[0] + p[1] / 60 + p[2] / 3600;\n    if (hrs === 0) return null;\n    return +(dist_km / hrs).toFixed(1);\n}\nconst avg_mvg_speed = calcMvgSpeed(a.dist_km, a.moving_time);\n\nlines.push('# ' + (a.name || 'Activity'));\nlines.push('');\nlines.push(subtitle);\nlines.push('');\nif (a.description) {\n    lines.push(a.description.replace(/\\n/g, '\\n\\n'));\n    lines.push('');\n}\n\n// Table 1: Distance | Start Time | Moving Time | Elapsed Time\nlines.push('| Distance | Start Time | Moving Time | Elapsed Time |');\nlines.push('| :------: | :--------: | :---------: | :----------: |');\nlines.push('| ' + (a.dist_km != null ? a.dist_km + ' km' : '—')\n    + ' | ' + (startHHMM || '—')\n    + ' | ' + (a.moving_time  || '—')\n    + ' | ' + (a.elapsed_time || '—') + ' |');\nlines.push('');\n\n// Table 2: Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain\nlines.push('| Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain |');\nlines.push('| --------- | ------------- | --------- | --------- |');\nlines.push('| ' + (a.speed_kmh     != null ? a.speed_kmh + ' kph'     : '—')\n    + ' | ' + (avg_mvg_speed != null ? avg_mvg_speed + ' kph' : '—')\n    + ' | ' + (a.max_speed_kmh != null ? a.max_speed_kmh + ' kph' : '—')\n    + ' | ' + (a.elv_m != null ? fmtInt(a.elv_m) + ' m' : '—') + ' |');\nlines.push('');\n\n// Table 3: Avg HR | Max HR (only if present)\nif (a.avg_hr || a.max_hr) {\n    lines.push('| Avg HR | Max HR |');\n    lines.push('| :-----: | :-----: |');\n    lines.push('| ' + (a.avg_hr ? a.avg_hr + ' bpm' : '—')\n        + ' | ' + (a.max_hr ? a.max_hr + ' bpm' : '—') + ' |');\n    lines.push('');\n}\n\n// Training Effect (only if any value >= 1)\nfunction teLabel(v) {\n    if (v < 1) return 'No Benefit';\n    if (v < 2) return 'Minor';\n    if (v < 3) return 'Maintaining';\n    if (v < 4) return 'Improving';\n    if (v < 5) return 'Highly Improving';\n    return 'Overreaching';\n}\nconst showAerobic = a.aerobic_te  != null && a.aerobic_te  >= 1;\nconst showAnaero  = a.anaerobic_te != null && a.anaerobic_te >= 1;\nif (showAerobic || showAnaero) {\n    const teParts = [];\n    if (showAerobic) teParts.push('Aerobic '   + (+a.aerobic_te).toFixed(1)   + ' (' + teLabel(a.aerobic_te)   + ')');\n    if (showAnaero)  teParts.push('Anaerobic ' + (+a.anaerobic_te).toFixed(1) + ' (' + teLabel(a.anaerobic_te) + ')');\n    lines.push('**Training Effect** · ' + teParts.join(' · '));\n    lines.push('');\n}\n\n// Cadence, power, VO2\nconst extraParts = [];\nif (a.cadence)   extraParts.push('**Cadence** ' + a.cadence + ' rpm');\nif (a.avg_power) extraParts.push('**Power** ' + a.avg_power + ' W');\nif (a.vo2max)    extraParts.push('**VO\\u2082 Max** ' + a.vo2max);\nif (extraParts.length > 0) {\n    lines.push(extraParts.join(' · '));\n    lines.push('');\n}\n\n// Leaflet map (only for activities with GPS track)\nlet leafletLines = null;\nif (a.polyline && a.polyline.length >= 2) {\n    const coords = a.polyline;\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [clng, clat] of coords) {\n        if (clat < minLat) minLat = clat; if (clat > maxLat) maxLat = clat;\n        if (clng < minLng) minLng = clng; if (clng > maxLng) maxLng = clng;\n    }\n    const midLat = +((minLat + maxLat) / 2).toFixed(5);\n    const midLng = +((minLng + maxLng) / 2).toFixed(5);\n    const maxSpan = Math.max(maxLat - minLat, maxLng - minLng);\n    const defaultZoom = Math.max(1, Math.min(15, Math.floor(Math.log2(360 / maxSpan))));\n    const jsonFilename = String(a.activityId) + '.json';\n    msg.geojsonContent = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: coords },\n            properties: { stroke: '#0000ff' }\n        }]\n    });\n    msg.geojsonPath = (flow.get('actGeojsonPath') || '/kms/10 PMS/Attachments/Garmin') + '/' + jsonFilename;\n    leafletLines = [\n        '\\`\\`\\`leaflet',\n        'id: garmin-' + a.activityId,\n        'geojson: [[' + jsonFilename + ']]',\n        'marker: start, ' + coords[0][1].toFixed(5) + ', ' + coords[0][0].toFixed(5) + ', Start',\n        'marker: end, ' + coords[coords.length-1][1].toFixed(5) + ', ' + coords[coords.length-1][0].toFixed(5) + ', End',\n        'lat: ' + midLat,\n        'long: ' + midLng,\n        'width: 80%',\n        'maxZoom: 18',\n        'defaultZoom: ' + defaultZoom,\n        'tileServer:',\n        ' - https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png|Light',\n        ' - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png|Dark',\n        '\\`\\`\\`',\n        ''\n    ];\n    for (const l of leafletLines) lines.push(l);\n}\n\nlines.push('[View on Garmin Connect](https://connect.garmin.com/activity/' + a.activityId + ')');\nlines.push('');\n\n// Daily note entry\nconst emojiMap = {'Ride':'🚴','Run':'🏃','Walk':'🚶','Hike':'⛰️','Swim':'🏊','Strength':'🏋️','Cardio':'🏃','Yoga':'🧘'};\nconst emoji = emojiMap[a.type] || '🏃';\nconst noteLines = [];\nnoteLines.push('- ' + startHHMM + ' ' + emoji + ' ' + msg.activityWikiLink + ' : ' + (a.type || 'Activity') + ' #garmin');\nif (a.description) noteLines.push('\\t- ' + a.description.replace(/\\n/g, ' '));\nconst nd1 = [];\nif (a.dist_km != null) nd1.push('**Distance:** ' + a.dist_km + ' km');\nif (a.elv_m   != null) nd1.push('**Elevation:** ' + a.elv_m + ' m');\nif (nd1.length) noteLines.push('\\t- ' + nd1.join(' | '));\nconst nd2 = [];\nif (a.moving_time)         nd2.push('**Moving Time:** ' + a.moving_time);\nif (avg_mvg_speed != null) nd2.push('**Avg Speed:** ' + avg_mvg_speed + ' kph');\nif (nd2.length) noteLines.push('\\t- ' + nd2.join(' | '));\nif (a.avg_hr) {\n    let hrStr = '**Heart Rate:** ' + a.avg_hr;\n    if (a.max_hr) hrStr += ' / ' + a.max_hr;\n    noteLines.push('\\t- ' + hrStr + ' bpm');\n}\nif (leafletLines) {\n    for (const l of leafletLines) noteLines.push(l);\n}\nmsg.noteupdate = noteLines.join('\\n');\nconst [dy, dm, dd2] = (a.date || '').split('-');\nmsg.dateStr = { year: dy || '', month: dm || '', day: dd2 || '' };\nmsg.files = { dailynotefile: dy + '-' + dm + '-' + dd2 + '.md' };\n\nmsg.activityNote = lines.join('\\n');\nmsg.activityId   = a.activityId;\nmsg.activityDate = a.date;\nmsg.activityName = a.name || 'Activity';\nmsg.filename     = msg.activityPath;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 520,
+        "wires": [
+            [
+                "565d8b7f4093fa3b"
+            ]
+        ]
+    },
+    {
+        "id": "565d8b7f4093fa3b",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "New or Existing?",
+        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds') || {};\nconst id  = String(msg.activityId);\nif (!ids[id]) {\n    // New activity — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\nif (ids[id] !== msg.activityPath) {\n    // Title renamed — record old path so it can be deleted and daily note updated\n    msg.oldActivityPath = ids[id];\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 520,
+        "wires": [
+            [
+                "6f313be492895cb7"
+            ],
+            [
+                "a37e58c6c6dfc5ee"
+            ]
+        ],
+        "outputLabels": [
+            "new → write",
+            "exists → check refresh"
+        ]
+    },
+    {
+        "id": "a37e58c6c6dfc5ee",
+        "type": "file in",
+        "z": "439b184fe3174610",
+        "name": "Read Activity Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": true,
+        "x": 210,
+        "y": 600,
+        "wires": [
+            [
+                "1d76a547e868a1eb"
+            ]
+        ]
+    },
+    {
+        "id": "1d76a547e868a1eb",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Refresh Flag Check",
+        "func": "// File exists and was read — check for garmin_refresh: true\nconst content  = (typeof msg.payload === 'string') ? msg.payload : '';\nconst fmMatch  = content.match(/^---\\n([\\s\\S]*?)\\n---/);\nconst fm       = fmMatch ? fmMatch[1] : '';\nif (!/^garmin_refresh:\\s*true\\s*$/m.test(fm)) {\n    return null;  // flag not set — skip\n}\nnode.warn('Refreshing activity ' + msg.activityId + ' (' + msg.activityName + ')');\nmsg.refreshMode = true;\nmsg.payload  = msg.activityNote;\nmsg.filename = msg.activityPath;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 600,
+        "wires": [
+            [
+                "6f313be492895cb7"
+            ]
+        ]
+    },
+    {
+        "id": "6f313be492895cb7",
+        "type": "file",
+        "z": "439b184fe3174610",
+        "name": "Write Activity Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": true,
+        "encoding": "none",
+        "x": 1010,
+        "y": 560,
+        "wires": [
+            [
+                "d602be9772a1dba2"
+            ]
+        ]
+    },
+    {
+        "id": "d602be9772a1dba2",
+        "type": "switch",
+        "z": "439b184fe3174610",
+        "name": "has geojson?",
+        "property": "geojsonContent",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 220,
+        "y": 660,
+        "wires": [
+            [
+                "f12dcb9ab5b3d836"
+            ],
+            [
+                "d961e350583683dd"
+            ]
+        ]
+    },
+    {
+        "id": "f12dcb9ab5b3d836",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "build geojson write",
+        "func": "msg.payload = msg.geojsonContent;\nmsg.filename = msg.geojsonPath;\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 530,
+        "y": 640,
+        "wires": [
+            [
+                "29f6159a7dd5c909"
+            ]
+        ]
+    },
+    {
+        "id": "29f6159a7dd5c909",
+        "type": "file",
+        "z": "439b184fe3174610",
+        "name": "Write GeoJSON File",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": true,
+        "encoding": "utf8",
+        "x": 780,
+        "y": 640,
+        "wires": [
+            [
+                "d961e350583683dd"
+            ]
+        ]
+    },
+    {
+        "id": "d961e350583683dd",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Track Written",
+        "func": "const ids = flow.get('actWrittenIds') || {};\nids[String(msg.activityId)] = msg.activityPath;\nflow.set('actWrittenIds', ids);\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 660,
+        "wires": [
+            [
+                "4e85779eff3dd097"
+            ]
+        ]
+    },
+    {
+        "id": "4e85779eff3dd097",
+        "type": "switch",
+        "z": "439b184fe3174610",
+        "name": "renamed?",
+        "property": "oldActivityPath",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "nempty"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 200,
+        "y": 720,
+        "wires": [
+            [
+                "5a6a105f2cb7e281"
+            ],
+            [
+                "35a3295e33aa6812"
+            ]
+        ]
+    },
+    {
+        "id": "5a6a105f2cb7e281",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Delete Old Note",
+        "func": "try {\n    const fs = require('fs');\n    fs.unlinkSync(msg.oldActivityPath);\n} catch (e) {\n    node.warn('Could not delete old note: ' + (e.message || e));\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 720,
+        "wires": [
+            [
+                "35a3295e33aa6812"
+            ]
+        ]
+    },
+    {
+        "id": "35a3295e33aa6812",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Build Daily Note Path",
+        "func": "const dailyPath = flow.get('actDailyNotesPath') || '/kms/10 PMS/11 Daily Notes';\nconst [dy, dm, dd] = (msg.activityDate || '').split('-');\nif (!dy) return null;\nmsg.filename = dailyPath + '/' + dy + '/' + dm + '/' + dy + '-' + dm + '-' + dd + '.md';\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 760,
+        "wires": [
+            [
+                "9f40504b8d7c6ba7"
+            ]
+        ]
+    },
+    {
+        "id": "9f40504b8d7c6ba7",
+        "type": "file in",
+        "z": "439b184fe3174610",
+        "name": "Read Daily Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": true,
+        "x": 900,
+        "y": 760,
+        "wires": [
+            [
+                "5ff237b573d89e19"
+            ]
+        ]
+    },
+    {
+        "id": "5ff237b573d89e19",
+        "type": "function",
+        "z": "439b184fe3174610",
+        "name": "Insert into Daily Note",
+        "func": "const entry = msg.noteupdate;\nif (!entry) return null;\nconst content = (typeof msg.payload === 'string') ? msg.payload : '';\nconst idStr = String(msg.activityId);\n\nif (content.indexOf(idStr) !== -1) {\n    // Entry already exists — only update if this is a rename or a refresh\n    if (!msg.oldActivityPath && !msg.refreshMode) return null;\n    // Replace the existing entry (title changed)\n    const lines = content.split('\\n');\n    let startIdx = -1, endIdx = -1;\n    for (let i = 0; i < lines.length; i++) {\n        if (lines[i].indexOf(idStr) !== -1) {\n            startIdx = i;\n            endIdx = i + 1;\n            while (endIdx < lines.length && lines[endIdx].startsWith('\\t')) endIdx++;\n            if (endIdx < lines.length && lines[endIdx].startsWith('```leaflet')) {\n                endIdx++;\n                while (endIdx < lines.length && lines[endIdx] !== '```') endIdx++;\n                if (endIdx < lines.length) endIdx++;\n                if (endIdx < lines.length && lines[endIdx] === '') endIdx++;\n            }\n            break;\n        }\n    }\n    if (startIdx === -1) return null;\n    lines.splice(startIdx, endIdx - startIdx, ...entry.split('\\n'));\n    msg.payload = lines.join('\\n');\n    return msg;\n}\n\nconst h = '## Notes';\nconst hi = content.indexOf(h);\nif (hi !== -1) {\n    const after = content.substring(hi + h.length);\n    const m = after.match(/\\n## [^#]/);\n    if (m) {\n        const pos = hi + h.length + m.index;\n        msg.payload = content.substring(0, pos) + '\\n' + entry + content.substring(pos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + entry + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + entry + '\\n';\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 760,
+        "wires": [
+            [
+                "371bdad0464d0566"
+            ]
+        ]
+    },
+    {
+        "id": "371bdad0464d0566",
+        "type": "file",
+        "z": "439b184fe3174610",
+        "name": "Write Daily Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": true,
+        "encoding": "none",
+        "x": 840,
+        "y": 820,
+        "wires": [
+            [
+                "bf0dbcc6a98f417e"
+            ]
+        ]
+    },
+    {
+        "id": "bf0dbcc6a98f417e",
+        "type": "debug",
+        "z": "439b184fe3174610",
+        "name": "Activity Written",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "activityName",
+        "targetType": "msg",
+        "statusVal": "activityName",
+        "statusType": "auto",
+        "x": 1080,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "a80deda56254e8ba",
+        "type": "inject",
+        "z": "439b184fe3174610",
         "name": "Setup (run once)",
-        "info": "Requires garmin.credentials.json to already exist — run the Garmin → Obsidian wellness flow Setup first.",
         "props": [
             {
                 "p": "scriptPath",
-                "v": "/path/to/strava-to-obsidian/garmin-activities-fetch.js",
+                "v": "/docker/strava-to-obsidian/garmin-activities-fetch.js",
                 "vt": "str"
             },
             {
@@ -46,615 +665,16 @@
         ],
         "repeat": "",
         "crontab": "",
-        "once": false,
+        "once": true,
         "onceDelay": "",
         "topic": "",
         "x": 150,
         "y": 80,
         "wires": [
             [
-                "act_setup_store"
+                "09141ec4643a6e19"
             ]
-        ]
-    },
-    {
-        "id": "act_setup_store",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Store Config",
-        "func": "if (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-activities-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('actScriptPath', msg.scriptPath);\nflow.set('actActivitiesPath', msg.activitiesPath || '/kms/10 PMS/Activities');\nflow.set('actGeojsonPath', msg.geojsonPath || '/kms/10 PMS/Attachments/Garmin');\nflow.set('actDailyNotesPath', msg.dailyNotesPath || '/kms/10 PMS/11 Daily Notes');\nnode.status({ fill: 'green', shape: 'dot', text: 'Config stored' });\nreturn null;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 80,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "act_comment_poll",
-        "type": "comment",
-        "z": "garmin_activities_tab",
-        "name": "── Flow 1: Active Polling (hourly) ──────────────────────────",
-        "info": "",
-        "x": 290,
-        "y": 160,
-        "wires": []
-    },
-    {
-        "id": "act_poll_inject",
-        "type": "inject",
-        "z": "garmin_activities_tab",
-        "name": "Poll Hourly",
-        "props": [],
-        "repeat": "",
-        "crontab": "0 * * * *",
-        "once": true,
-        "onceDelay": "5",
-        "topic": "",
-        "x": 140,
-        "y": 220,
-        "wires": [
-            [
-                "act_poll_build"
-            ]
-        ]
-    },
-    {
-        "id": "act_poll_build",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Build Poll Command",
-        "func": "const scriptPath = flow.get('actScriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nmsg.payload = scriptPath + ' --limit 50';\nmsg._source = 'poll';\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 340,
-        "y": 220,
-        "wires": [
-            [
-                "act_poll_exec"
-            ]
-        ]
-    },
-    {
-        "id": "act_poll_exec",
-        "type": "exec",
-        "z": "garmin_activities_tab",
-        "name": "Run garmin-activities-fetch.js",
-        "command": "node",
-        "addpay": true,
-        "append": "",
-        "useSpawn": false,
-        "timer": "120",
-        "winHide": true,
-        "oldrc": false,
-        "outputs": 3,
-        "x": 570,
-        "y": 220,
-        "wires": [
-            [
-                "act_parse"
-            ],
-            [
-                "act_exec_err_debug"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "act_comment_historic",
-        "type": "comment",
-        "z": "garmin_activities_tab",
-        "name": "── Flow 2: Historic Bulk Load (manual) ──────────────────────",
-        "info": "",
-        "x": 300,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "act_historic_inject",
-        "type": "inject",
-        "z": "garmin_activities_tab",
-        "name": "Load History (manual)",
-        "props": [
-            {
-                "p": "historyYear",
-                "v": "2024",
-                "vt": "num"
-            }
         ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "",
-        "topic": "",
-        "x": 170,
-        "y": 380,
-        "wires": [
-            [
-                "act_historic_build"
-            ]
-        ]
-    },
-    {
-        "id": "act_historic_build",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Build Historic Command",
-        "func": "const scriptPath = flow.get('actScriptPath');\nif (!scriptPath) { node.warn('Run the Setup inject first.'); return null; }\nif (!msg.historyYear) { node.warn('Set historyYear on the inject node.'); return null; }\nconst y = String(msg.historyYear);\nmsg.payload = scriptPath + ' --start ' + y + '-01-01 --end ' + y + '-12-31';\nmsg._source = 'historic';\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 380,
-        "y": 380,
-        "wires": [
-            [
-                "act_historic_exec"
-            ]
-        ]
-    },
-    {
-        "id": "act_historic_exec",
-        "type": "exec",
-        "z": "garmin_activities_tab",
-        "name": "Run garmin-activities-fetch.js",
-        "command": "node",
-        "addpay": true,
-        "append": "",
-        "useSpawn": false,
-        "timer": "300",
-        "winHide": true,
-        "oldrc": false,
-        "outputs": 3,
-        "x": 600,
-        "y": 380,
-        "wires": [
-            [
-                "act_parse"
-            ],
-            [
-                "act_exec_err_debug"
-            ],
-            []
-        ]
-    },
-    {
-        "id": "act_exec_err_debug",
-        "type": "debug",
-        "z": "garmin_activities_tab",
-        "name": "Exec Error",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "payload",
-        "statusType": "auto",
-        "x": 800,
-        "y": 300,
-        "wires": []
-    },
-    {
-        "id": "act_comment_process",
-        "type": "comment",
-        "z": "garmin_activities_tab",
-        "name": "── Shared: Parse & Process Chain ────────────────────────────",
-        "info": "",
-        "x": 290,
-        "y": 460,
-        "wires": []
-    },
-    {
-        "id": "act_parse",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Parse Activities JSON",
-        "func": "const raw = (msg.payload || '').trim();\nif (!raw) {\n    node.warn('garmin-activities-fetch: no output (check Exec Error debug)');\n    return [null, { payload: 'No output from script' }];\n}\nlet activities;\ntry { activities = JSON.parse(raw); } catch (e) {\n    node.warn('JSON parse error: ' + raw.substring(0, 200));\n    return [null, { payload: 'JSON parse error: ' + raw.substring(0, 200) }];\n}\nif (!Array.isArray(activities) || activities.length === 0) {\n    return [null, { payload: 'No activities returned' }];\n}\nnode.status({ fill: 'green', shape: 'dot', text: activities.length + ' activities' });\nmsg.payload = activities;\nreturn [msg, null];",
-        "outputs": 2,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 850,
-        "y": 300,
-        "wires": [
-            [
-                "act_split"
-            ],
-            [
-                "act_parse_debug"
-            ]
-        ]
-    },
-    {
-        "id": "act_parse_debug",
-        "type": "debug",
-        "z": "garmin_activities_tab",
-        "name": "Parse Status",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": true,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "payload",
-        "statusType": "auto",
-        "x": 1050,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "act_split",
-        "type": "split",
-        "z": "garmin_activities_tab",
-        "name": "Each Activity",
-        "splt": "\\n",
-        "spltType": "str",
-        "arraySplt": 1,
-        "arraySpltType": "len",
-        "stream": false,
-        "addname": "",
-        "x": 140,
-        "y": 520,
-        "wires": [
-            [
-                "act_queue"
-            ]
-        ]
-    },
-    {
-        "id": "act_queue",
-        "type": "delay",
-        "z": "garmin_activities_tab",
-        "name": "Queue (1/s)",
-        "pauseType": "rate",
-        "timeout": "1",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "outputs": 1,
-        "x": 340,
-        "y": 520,
-        "wires": [
-            [
-                "act_format"
-            ]
-        ]
-    },
-    {
-        "id": "act_format",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Format Activity Note",
-        "func": "const a = msg.payload;\nconst activitiesPath = flow.get('actActivitiesPath') || '/kms/10 PMS/Activities';\n\nfunction slugify(s) {\n    return (s || '').toLowerCase()\n        .replace(/[^a-z0-9]+/g, '-')\n        .replace(/^-+|-+$/g, '')\n        .substring(0, 50);\n}\n\nconst date     = a.date || '';\nconst parts    = date.split('-');\nconst yyyy     = parts[0] || 'unknown';\nconst mm       = parts[1] || 'unknown';\nconst sport    = ((a.sport_type || a.type || 'activity').toLowerCase().replace(/[^a-z0-9]/g, '-'));\nconst slug     = slugify(a.name);\nconst noteFile = date.replace(/-/g, '') + '-' + String(a.activityId) + '-' + sport + '-' + slug + '.md';\nmsg.activityPath    = activitiesPath + '/' + yyyy + '/' + mm + '/' + noteFile;\nmsg.activityRelPath = 'Activities/' + yyyy + '/' + mm + '/' + noteFile.replace('.md', '');\nmsg.activityWikiLink = '[[' + msg.activityRelPath + '|' + (a.name || 'Activity') + ']]';\n\n// Build YAML frontmatter (no quotes on time strings)\nconst lines = ['---'];\nlines.push('garmin_activity_id: ' + a.activityId);\nif (a.date)              lines.push('garmin_date: ' + a.date);\nif (a.type)              lines.push('garmin_type: ' + a.type);\nif (a.sport_type)        lines.push('garmin_sport_type: ' + a.sport_type);\nif (a.gear)              lines.push('garmin_gear: ' + a.gear);\nlines.push('garmin_name: ' + (a.name || ''));\nif (a.description)       lines.push('garmin_description: ' + a.description.replace(/\\n/g, ' '));\nif (a.dist_km != null)       lines.push('garmin_dist_km: ' + a.dist_km);\nif (a.elv_m != null)         lines.push('garmin_elv_m: ' + a.elv_m);\nif (a.elapsed_time)          lines.push('garmin_elapsed_time: ' + a.elapsed_time);\nif (a.moving_time)           lines.push('garmin_moving_time: ' + a.moving_time);\nif (a.start_time)            lines.push('garmin_start_time: ' + a.start_time);\nif (a.day_of_week)           lines.push('garmin_day_of_week: ' + a.day_of_week);\nif (a.speed_kmh != null)     lines.push('garmin_speed_kmh: ' + a.speed_kmh);\nif (a.max_speed_kmh != null) lines.push('garmin_max_speed_kmh: ' + a.max_speed_kmh);\nif (a.avg_hr)              lines.push('garmin_avg_hr: ' + a.avg_hr);\nif (a.max_hr)              lines.push('garmin_max_hr: ' + a.max_hr);\nif (a.calories)            lines.push('garmin_calories: ' + a.calories);\nif (a.elv_loss_m != null)  lines.push('garmin_elv_loss_m: ' + a.elv_loss_m);\nif (a.aerobic_te != null)  lines.push('garmin_aerobic_te: ' + (+a.aerobic_te).toFixed(1));\nif (a.anaerobic_te != null) lines.push('garmin_anaerobic_te: ' + (+a.anaerobic_te).toFixed(1));\nif (a.vo2max)              lines.push('garmin_vo2max: ' + a.vo2max);\nif (a.avg_power)           lines.push('garmin_avg_power: ' + a.avg_power);\nif (a.cadence)             lines.push('garmin_cadence: ' + a.cadence);\nlines.push('garmin_refresh: false');\nlines.push('---');\nlines.push('');\n\n// Display date: \"Monday 16 February 2026\"\nconst MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nlet displayDate = a.date || '';\nif (a.date && parts.length === 3) {\n    const d  = parseInt(parts[2], 10);\n    const mo = parseInt(parts[1], 10) - 1;\n    displayDate = (a.day_of_week ? a.day_of_week + ' ' : '') + d + ' ' + MONTHS[mo] + ' ' + yyyy;\n}\nconst startHHMM = (a.start_time || '').substring(0, 5);\nconst gearSuffix = a.gear ? ' · ' + a.gear : '';\nconst subtitle = '**' + (a.type || 'Activity') + '**'\n    + (displayDate ? ' · ' + displayDate : '')\n    + (startHHMM   ? ' · ' + startHHMM   : '')\n    + gearSuffix;\n\n// Comma-format large integers (e.g. 1319 → \"1,319\")\nfunction fmtInt(n) {\n    return String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n}\n\n// Avg moving speed: dist_km / moving hours\nfunction calcMvgSpeed(dist_km, moving_time) {\n    if (!dist_km || !moving_time) return null;\n    const p = moving_time.split(':').map(Number);\n    if (p.length !== 3) return null;\n    const hrs = p[0] + p[1] / 60 + p[2] / 3600;\n    if (hrs === 0) return null;\n    return +(dist_km / hrs).toFixed(1);\n}\nconst avg_mvg_speed = calcMvgSpeed(a.dist_km, a.moving_time);\n\nlines.push('# ' + (a.name || 'Activity'));\nlines.push('');\nlines.push(subtitle);\nlines.push('');\nif (a.description) {\n    lines.push(a.description.replace(/\\n/g, '\\n\\n'));\n    lines.push('');\n}\n\n// Table 1: Distance | Start Time | Moving Time | Elapsed Time\nlines.push('| Distance | Start Time | Moving Time | Elapsed Time |');\nlines.push('| :------: | :--------: | :---------: | :----------: |');\nlines.push('| ' + (a.dist_km != null ? a.dist_km + ' km' : '—')\n    + ' | ' + (startHHMM || '—')\n    + ' | ' + (a.moving_time  || '—')\n    + ' | ' + (a.elapsed_time || '—') + ' |');\nlines.push('');\n\n// Table 2: Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain\nlines.push('| Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain |');\nlines.push('| --------- | ------------- | --------- | --------- |');\nlines.push('| ' + (a.speed_kmh     != null ? a.speed_kmh + ' kph'     : '—')\n    + ' | ' + (avg_mvg_speed != null ? avg_mvg_speed + ' kph' : '—')\n    + ' | ' + (a.max_speed_kmh != null ? a.max_speed_kmh + ' kph' : '—')\n    + ' | ' + (a.elv_m != null ? fmtInt(a.elv_m) + ' m' : '—') + ' |');\nlines.push('');\n\n// Table 3: Avg HR | Max HR (only if present)\nif (a.avg_hr || a.max_hr) {\n    lines.push('| Avg HR | Max HR |');\n    lines.push('| :-----: | :-----: |');\n    lines.push('| ' + (a.avg_hr ? a.avg_hr + ' bpm' : '—')\n        + ' | ' + (a.max_hr ? a.max_hr + ' bpm' : '—') + ' |');\n    lines.push('');\n}\n\n// Training Effect (only if any value >= 1)\nfunction teLabel(v) {\n    if (v < 1) return 'No Benefit';\n    if (v < 2) return 'Minor';\n    if (v < 3) return 'Maintaining';\n    if (v < 4) return 'Improving';\n    if (v < 5) return 'Highly Improving';\n    return 'Overreaching';\n}\nconst showAerobic = a.aerobic_te  != null && a.aerobic_te  >= 1;\nconst showAnaero  = a.anaerobic_te != null && a.anaerobic_te >= 1;\nif (showAerobic || showAnaero) {\n    const teParts = [];\n    if (showAerobic) teParts.push('Aerobic '   + (+a.aerobic_te).toFixed(1)   + ' (' + teLabel(a.aerobic_te)   + ')');\n    if (showAnaero)  teParts.push('Anaerobic ' + (+a.anaerobic_te).toFixed(1) + ' (' + teLabel(a.anaerobic_te) + ')');\n    lines.push('**Training Effect** · ' + teParts.join(' · '));\n    lines.push('');\n}\n\n// Cadence, power, VO2\nconst extraParts = [];\nif (a.cadence)   extraParts.push('**Cadence** ' + a.cadence + ' rpm');\nif (a.avg_power) extraParts.push('**Power** ' + a.avg_power + ' W');\nif (a.vo2max)    extraParts.push('**VO\\u2082 Max** ' + a.vo2max);\nif (extraParts.length > 0) {\n    lines.push(extraParts.join(' · '));\n    lines.push('');\n}\n\n// Leaflet map (only for activities with GPS track)\nlet leafletLines = null;\nif (a.polyline && a.polyline.length >= 2) {\n    const coords = a.polyline;\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [clng, clat] of coords) {\n        if (clat < minLat) minLat = clat; if (clat > maxLat) maxLat = clat;\n        if (clng < minLng) minLng = clng; if (clng > maxLng) maxLng = clng;\n    }\n    const midLat = +((minLat + maxLat) / 2).toFixed(5);\n    const midLng = +((minLng + maxLng) / 2).toFixed(5);\n    const maxSpan = Math.max(maxLat - minLat, maxLng - minLng);\n    const defaultZoom = Math.max(1, Math.min(15, Math.floor(Math.log2(360 / maxSpan))));\n    const jsonFilename = String(a.activityId) + '.json';\n    msg.geojsonContent = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: coords },\n            properties: { stroke: '#0000ff' }\n        }]\n    });\n    msg.geojsonPath = (flow.get('actGeojsonPath') || '/kms/10 PMS/Attachments/Garmin') + '/' + jsonFilename;\n    leafletLines = [\n        '\\`\\`\\`leaflet',\n        'id: garmin-' + a.activityId,\n        'geojson: [[' + jsonFilename + ']]',\n        'marker: start, ' + coords[0][1].toFixed(5) + ', ' + coords[0][0].toFixed(5) + ', Start',\n        'marker: end, ' + coords[coords.length-1][1].toFixed(5) + ', ' + coords[coords.length-1][0].toFixed(5) + ', End',\n        'lat: ' + midLat,\n        'long: ' + midLng,\n        'width: 80%',\n        'maxZoom: 18',\n        'defaultZoom: ' + defaultZoom,\n        'tileServer:',\n        ' - https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png|Light',\n        ' - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png|Dark',\n        '\\`\\`\\`',\n        ''\n    ];\n    for (const l of leafletLines) lines.push(l);\n}\n\nlines.push('[View on Garmin Connect](https://connect.garmin.com/activity/' + a.activityId + ')');\nlines.push('');\n\n// Daily note entry\nconst emojiMap = {'Ride':'🚴','Run':'🏃','Walk':'🚶','Hike':'⛰️','Swim':'🏊','Strength':'🏋️','Cardio':'🏃','Yoga':'🧘'};\nconst emoji = emojiMap[a.type] || '🏃';\nconst noteLines = [];\nnoteLines.push('- ' + startHHMM + ' ' + emoji + ' ' + msg.activityWikiLink + ' : ' + (a.type || 'Activity') + ' #garmin');\nif (a.description) noteLines.push('\\t- ' + a.description.replace(/\\n/g, ' '));\nconst nd1 = [];\nif (a.dist_km != null) nd1.push('**Distance:** ' + a.dist_km + ' km');\nif (a.elv_m   != null) nd1.push('**Elevation:** ' + a.elv_m + ' m');\nif (nd1.length) noteLines.push('\\t- ' + nd1.join(' | '));\nconst nd2 = [];\nif (a.moving_time)         nd2.push('**Moving Time:** ' + a.moving_time);\nif (avg_mvg_speed != null) nd2.push('**Avg Speed:** ' + avg_mvg_speed + ' kph');\nif (nd2.length) noteLines.push('\\t- ' + nd2.join(' | '));\nif (a.avg_hr) {\n    let hrStr = '**Heart Rate:** ' + a.avg_hr;\n    if (a.max_hr) hrStr += ' / ' + a.max_hr;\n    noteLines.push('\\t- ' + hrStr + ' bpm');\n}\nif (leafletLines) {\n    for (const l of leafletLines) noteLines.push(l);\n}\nmsg.noteupdate = noteLines.join('\\n');\nconst [dy, dm, dd2] = (a.date || '').split('-');\nmsg.dateStr = { year: dy || '', month: dm || '', day: dd2 || '' };\nmsg.files = { dailynotefile: dy + '-' + dm + '-' + dd2 + '.md' };\n\nmsg.activityNote = lines.join('\\n');\nmsg.activityId   = a.activityId;\nmsg.activityDate = a.date;\nmsg.activityName = a.name || 'Activity';\nmsg.filename     = msg.activityPath;\nreturn msg;\n",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 530,
-        "y": 520,
-        "wires": [
-            [
-                "act_dedup_check"
-            ]
-        ]
-    },
-    {
-        "id": "act_dedup_check",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "New or Existing?",
-        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds') || {};\nconst id  = String(msg.activityId);\nif (!ids[id]) {\n    // New activity — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\nif (ids[id] !== msg.activityPath) {\n    // Title renamed — record old path so it can be deleted and daily note updated\n    msg.oldActivityPath = ids[id];\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
-        "outputs": 2,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 740,
-        "y": 520,
-        "outputLabels": [
-            "new → write",
-            "exists → check refresh"
-        ],
-        "wires": [
-            [
-                "act_write_note"
-            ],
-            [
-                "act_note_read"
-            ]
-        ]
-    },
-    {
-        "id": "act_note_read",
-        "type": "file in",
-        "z": "garmin_activities_tab",
-        "name": "Read Activity Note",
-        "filename": "filename",
-        "filenameType": "msg",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "utf8",
-        "allProps": true,
-        "x": 960,
-        "y": 580,
-        "wires": [
-            [
-                "act_refresh_check"
-            ]
-        ]
-    },
-    {
-        "id": "act_refresh_check",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Refresh Flag Check",
-        "func": "// File exists and was read — check for garmin_refresh: true\nconst content  = (typeof msg.payload === 'string') ? msg.payload : '';\nconst fmMatch  = content.match(/^---\\n([\\s\\S]*?)\\n---/);\nconst fm       = fmMatch ? fmMatch[1] : '';\nif (!/^garmin_refresh:\\s*true\\s*$/m.test(fm)) {\n    return null;  // flag not set — skip\n}\nnode.warn('Refreshing activity ' + msg.activityId + ' (' + msg.activityName + ')');\nmsg.payload  = msg.activityNote;\nmsg.filename = msg.activityPath;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1160,
-        "y": 580,
-        "wires": [
-            [
-                "act_write_note"
-            ]
-        ]
-    },
-    {
-        "id": "act_write_note",
-        "type": "file",
-        "z": "garmin_activities_tab",
-        "name": "Write Activity Note",
-        "filename": "filename",
-        "filenameType": "msg",
-        "appendNewline": false,
-        "createDir": true,
-        "overwriteFile": true,
-        "encoding": "none",
-        "x": 1160,
-        "y": 520,
-        "wires": [
-            [
-                "act_map_check"
-            ]
-        ]
-    },
-    {
-        "id": "act_map_check",
-        "type": "switch",
-        "z": "garmin_activities_tab",
-        "name": "has geojson?",
-        "property": "geojsonContent",
-        "propertyType": "msg",
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "rules": [
-            { "t": "nempty" },
-            { "t": "else" }
-        ],
-        "x": 1370,
-        "y": 520,
-        "wires": [
-            [ "act_map_prep" ],
-            [ "act_track_written" ]
-        ]
-    },
-    {
-        "id": "act_map_prep",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "build geojson write",
-        "func": "msg.payload = msg.geojsonContent;\nmsg.filename = msg.geojsonPath;\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1550,
-        "y": 460,
-        "wires": [
-            [ "act_map_file" ]
-        ]
-    },
-    {
-        "id": "act_map_file",
-        "type": "file",
-        "z": "garmin_activities_tab",
-        "name": "Write GeoJSON File",
-        "filename": "filename",
-        "filenameType": "msg",
-        "appendNewline": false,
-        "createDir": true,
-        "overwriteFile": true,
-        "encoding": "utf8",
-        "x": 1730,
-        "y": 460,
-        "wires": [
-            [ "act_track_written" ]
-        ]
-    },
-    {
-        "id": "act_track_written",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Track Written",
-        "func": "const ids = flow.get('actWrittenIds') || {};\nids[String(msg.activityId)] = msg.activityPath;\nflow.set('actWrittenIds', ids);\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1930,
-        "y": 520,
-        "wires": [
-            [
-                "act_rename_check"
-            ]
-        ]
-    },
-    {
-        "id": "act_rename_check",
-        "type": "switch",
-        "z": "garmin_activities_tab",
-        "name": "renamed?",
-        "property": "oldActivityPath",
-        "propertyType": "msg",
-        "checkall": "true",
-        "repair": false,
-        "outputs": 2,
-        "rules": [
-            { "t": "nempty" },
-            { "t": "else" }
-        ],
-        "x": 2120,
-        "y": 520,
-        "wires": [
-            [ "act_old_delete" ],
-            [ "act_daily_build" ]
-        ]
-    },
-    {
-        "id": "act_old_delete",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Delete Old Note",
-        "func": "try {\n    const fs = require('fs');\n    fs.unlinkSync(msg.oldActivityPath);\n} catch (e) {\n    node.warn('Could not delete old note: ' + (e.message || e));\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2300,
-        "y": 460,
-        "wires": [
-            [ "act_daily_build" ]
-        ]
-    },
-    {
-        "id": "act_daily_build",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Build Daily Note Path",
-        "func": "const dailyPath = flow.get('actDailyNotesPath') || '/kms/10 PMS/11 Daily Notes';\nconst [dy, dm, dd] = (msg.activityDate || '').split('-');\nif (!dy) return null;\nmsg.filename = dailyPath + '/' + dy + '/' + dm + '/' + dy + '-' + dm + '-' + dd + '.md';\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2520,
-        "y": 520,
-        "wires": [
-            [
-                "act_daily_read"
-            ]
-        ]
-    },
-    {
-        "id": "act_daily_read",
-        "type": "file in",
-        "z": "garmin_activities_tab",
-        "name": "Read Daily Note",
-        "filename": "filename",
-        "filenameType": "msg",
-        "format": "utf8",
-        "chunk": false,
-        "sendError": false,
-        "encoding": "utf8",
-        "allProps": true,
-        "x": 2700,
-        "y": 520,
-        "wires": [
-            [
-                "act_daily_insert"
-            ]
-        ]
-    },
-    {
-        "id": "act_daily_insert",
-        "type": "function",
-        "z": "garmin_activities_tab",
-        "name": "Insert into Daily Note",
-        "func": "const entry = msg.noteupdate;\nif (!entry) return null;\nconst content = (typeof msg.payload === 'string') ? msg.payload : '';\nconst idStr = String(msg.activityId);\n\nif (content.indexOf(idStr) !== -1) {\n    // Entry already exists — only update if this is a rename\n    if (!msg.oldActivityPath) return null;\n    // Replace the existing entry (title changed)\n    const lines = content.split('\\n');\n    let startIdx = -1, endIdx = -1;\n    for (let i = 0; i < lines.length; i++) {\n        if (lines[i].indexOf(idStr) !== -1) {\n            startIdx = i;\n            endIdx = i + 1;\n            while (endIdx < lines.length && lines[endIdx].startsWith('\\t')) endIdx++;\n            if (endIdx < lines.length && lines[endIdx].startsWith('```leaflet')) {\n                endIdx++;\n                while (endIdx < lines.length && lines[endIdx] !== '```') endIdx++;\n                if (endIdx < lines.length) endIdx++;\n                if (endIdx < lines.length && lines[endIdx] === '') endIdx++;\n            }\n            break;\n        }\n    }\n    if (startIdx === -1) return null;\n    lines.splice(startIdx, endIdx - startIdx, ...entry.split('\\n'));\n    msg.payload = lines.join('\\n');\n    return msg;\n}\n\nconst h = '## Notes';\nconst hi = content.indexOf(h);\nif (hi !== -1) {\n    const after = content.substring(hi + h.length);\n    const m = after.match(/\\n## [^#]/);\n    if (m) {\n        const pos = hi + h.length + m.index;\n        msg.payload = content.substring(0, pos) + '\\n' + entry + content.substring(pos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + entry + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + entry + '\\n';\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": "",
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 2890,
-        "y": 520,
-        "wires": [
-            [
-                "act_daily_write"
-            ]
-        ]
-    },
-    {
-        "id": "act_daily_write",
-        "type": "file",
-        "z": "garmin_activities_tab",
-        "name": "Write Daily Note",
-        "filename": "filename",
-        "filenameType": "msg",
-        "appendNewline": false,
-        "createDir": true,
-        "overwriteFile": true,
-        "encoding": "none",
-        "x": 3070,
-        "y": 520,
-        "wires": [
-            [
-                "act_done_debug"
-            ]
-        ]
-    },
-    {
-        "id": "act_done_debug",
-        "type": "debug",
-        "z": "garmin_activities_tab",
-        "name": "Activity Written",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": true,
-        "complete": "activityName",
-        "targetType": "msg",
-        "statusVal": "activityName",
-        "statusType": "auto",
-        "x": 3250,
-        "y": 520,
-        "wires": []
+        "info": "Requires garmin.credentials.json to already exist — run the Garmin → Obsidian wellness flow Setup first."
     }
 ]
