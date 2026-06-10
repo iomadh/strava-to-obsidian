@@ -115,6 +115,18 @@ async function fetchActivities(client, args) {
         return gearCache[activityId];
     }
 
+    async function fetchPolyline(activityId) {
+        try {
+            const url = 'https://connectapi.garmin.com/activity-service/activity/' + activityId + '/details';
+            const detail = await client.get(url);
+            const gp = detail && detail.geoPolylineDTO;
+            if (!gp || !Array.isArray(gp.polyline) || gp.polyline.length < 2) return null;
+            return gp.polyline.map(p => [+(+p.lon).toFixed(5), +(+p.lat).toFixed(5)]);
+        } catch (_) {
+            return null;
+        }
+    }
+
     const result = [];
     let startIndex = 0;
     let paginationDone = false;
@@ -148,7 +160,10 @@ async function fetchActivities(client, args) {
                 } catch (_) {}
             }
 
-            const gearName = await lookupGear(a.activityId);
+            const [gearName, polyline] = await Promise.all([
+                lookupGear(a.activityId),
+                fetchPolyline(a.activityId),
+            ]);
 
             result.push({
                 activityId:    a.activityId,
@@ -174,6 +189,7 @@ async function fetchActivities(client, args) {
                 vo2max:        a.vO2MaxValue                                         || null,
                 avg_power:     a.avgPower                                            || null,
                 cadence:       Math.round(a.averageBikingCadenceInRevPerMinute || a.averageRunningCadenceInStepsPerMinute || 0) || null,
+                polyline:      polyline,
             });
 
             if (result.length >= maxResults) { paginationDone = true; break; }
