@@ -127,6 +127,17 @@ async function fetchActivities(client, args) {
         }
     }
 
+    async function fetchDescription(activityId) {
+        try {
+            const url = 'https://connectapi.garmin.com/activity-service/activity/' + activityId;
+            const data = await client.get(url);
+            const desc = data && (data.description || data.activityDescription);
+            return desc ? String(desc).trim() || null : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
     const result = [];
     let startIndex = 0;
     let paginationDone = false;
@@ -160,9 +171,10 @@ async function fetchActivities(client, args) {
                 } catch (_) {}
             }
 
-            const [gearName, polyline] = await Promise.all([
+            const [gearName, polyline, description] = await Promise.all([
                 lookupGear(a.activityId),
                 fetchPolyline(a.activityId),
+                fetchDescription(a.activityId),
             ]);
 
             result.push({
@@ -189,7 +201,7 @@ async function fetchActivities(client, args) {
                 vo2max:        a.vO2MaxValue                                         || null,
                 avg_power:     a.avgPower                                            || null,
                 cadence:       Math.round(a.averageBikingCadenceInRevPerMinute || a.averageRunningCadenceInStepsPerMinute || 0) || null,
-                description:   a.description ? String(a.description).trim() : null,
+                description:   description,
                 polyline:      polyline,
             });
 
