@@ -365,7 +365,7 @@
         "type": "function",
         "z": "garmin_activities_tab",
         "name": "New or Existing?",
-        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds') || {};\nconst id  = String(msg.activityId);\nif (!ids[id] || ids[id] !== msg.activityPath) {\n    // New activity, or title changed (path changed) — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
+        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds') || {};\nconst id  = String(msg.activityId);\nif (!ids[id]) {\n    // New activity — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\nif (ids[id] !== msg.activityPath) {\n    // Title renamed — record old path so it can be deleted and daily note updated\n    msg.oldActivityPath = ids[id];\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -518,8 +518,47 @@
         "y": 520,
         "wires": [
             [
-                "act_daily_build"
+                "act_rename_check"
             ]
+        ]
+    },
+    {
+        "id": "act_rename_check",
+        "type": "switch",
+        "z": "garmin_activities_tab",
+        "name": "renamed?",
+        "property": "oldActivityPath",
+        "propertyType": "msg",
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "rules": [
+            { "t": "nempty" },
+            { "t": "else" }
+        ],
+        "x": 2120,
+        "y": 520,
+        "wires": [
+            [ "act_old_delete" ],
+            [ "act_daily_build" ]
+        ]
+    },
+    {
+        "id": "act_old_delete",
+        "type": "function",
+        "z": "garmin_activities_tab",
+        "name": "Delete Old Note",
+        "func": "try {\n    const fs = require('fs');\n    fs.unlinkSync(msg.oldActivityPath);\n} catch (e) {\n    node.warn('Could not delete old note: ' + (e.message || e));\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2300,
+        "y": 460,
+        "wires": [
+            [ "act_daily_build" ]
         ]
     },
     {
@@ -534,7 +573,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2140,
+        "x": 2520,
         "y": 520,
         "wires": [
             [
@@ -554,7 +593,7 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": true,
-        "x": 2320,
+        "x": 2700,
         "y": 520,
         "wires": [
             [
@@ -567,14 +606,14 @@
         "type": "function",
         "z": "garmin_activities_tab",
         "name": "Insert into Daily Note",
-        "func": "const entry = msg.noteupdate;\nif (!entry) return null;\nconst content = (typeof msg.payload === 'string') ? msg.payload : '';\nif (msg.activityId && content.indexOf(String(msg.activityId)) !== -1) return null;\nconst h = '## Notes';\nconst hi = content.indexOf(h);\nif (hi !== -1) {\n    const after = content.substring(hi + h.length);\n    const m = after.match(/\\n## [^#]/);\n    if (m) {\n        const pos = hi + h.length + m.index;\n        msg.payload = content.substring(0, pos) + '\\n' + entry + content.substring(pos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + entry + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + entry + '\\n';\n}\nreturn msg;",
+        "func": "const entry = msg.noteupdate;\nif (!entry) return null;\nconst content = (typeof msg.payload === 'string') ? msg.payload : '';\nconst idStr = String(msg.activityId);\n\nif (content.indexOf(idStr) !== -1) {\n    // Entry already exists — only update if this is a rename\n    if (!msg.oldActivityPath) return null;\n    // Replace the existing entry (title changed)\n    const lines = content.split('\\n');\n    let startIdx = -1, endIdx = -1;\n    for (let i = 0; i < lines.length; i++) {\n        if (lines[i].indexOf(idStr) !== -1) {\n            startIdx = i;\n            endIdx = i + 1;\n            while (endIdx < lines.length && lines[endIdx].startsWith('\\t')) endIdx++;\n            if (endIdx < lines.length && lines[endIdx].startsWith('```leaflet')) {\n                endIdx++;\n                while (endIdx < lines.length && lines[endIdx] !== '```') endIdx++;\n                if (endIdx < lines.length) endIdx++;\n                if (endIdx < lines.length && lines[endIdx] === '') endIdx++;\n            }\n            break;\n        }\n    }\n    if (startIdx === -1) return null;\n    lines.splice(startIdx, endIdx - startIdx, ...entry.split('\\n'));\n    msg.payload = lines.join('\\n');\n    return msg;\n}\n\nconst h = '## Notes';\nconst hi = content.indexOf(h);\nif (hi !== -1) {\n    const after = content.substring(hi + h.length);\n    const m = after.match(/\\n## [^#]/);\n    if (m) {\n        const pos = hi + h.length + m.index;\n        msg.payload = content.substring(0, pos) + '\\n' + entry + content.substring(pos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + entry + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + entry + '\\n';\n}\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2510,
+        "x": 2890,
         "y": 520,
         "wires": [
             [
@@ -593,7 +632,7 @@
         "createDir": true,
         "overwriteFile": true,
         "encoding": "none",
-        "x": 2690,
+        "x": 3070,
         "y": 520,
         "wires": [
             [
@@ -614,7 +653,7 @@
         "targetType": "msg",
         "statusVal": "activityName",
         "statusType": "auto",
-        "x": 2870,
+        "x": 3250,
         "y": 520,
         "wires": []
     }
