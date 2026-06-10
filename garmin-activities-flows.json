@@ -37,6 +37,11 @@
                 "p": "geojsonPath",
                 "v": "/kms/10 PMS/Attachments/Garmin",
                 "vt": "str"
+            },
+            {
+                "p": "dailyNotesPath",
+                "v": "/kms/10 PMS/11 Daily Notes",
+                "vt": "str"
             }
         ],
         "repeat": "",
@@ -57,7 +62,7 @@
         "type": "function",
         "z": "garmin_activities_tab",
         "name": "Store Config",
-        "func": "if (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-activities-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('actScriptPath', msg.scriptPath);\nflow.set('actActivitiesPath', msg.activitiesPath || '/kms/10 PMS/Activities');\nflow.set('actGeojsonPath', msg.geojsonPath || '/kms/10 PMS/Attachments/Garmin');\nnode.status({ fill: 'green', shape: 'dot', text: 'Config stored' });\nreturn null;",
+        "func": "if (!msg.scriptPath || msg.scriptPath.indexOf('/path/to/') !== -1) {\n    node.warn('Set scriptPath to the full path of garmin-activities-fetch.js in the Setup inject node.');\n    return null;\n}\nflow.set('actScriptPath', msg.scriptPath);\nflow.set('actActivitiesPath', msg.activitiesPath || '/kms/10 PMS/Activities');\nflow.set('actGeojsonPath', msg.geojsonPath || '/kms/10 PMS/Attachments/Garmin');\nflow.set('actDailyNotesPath', msg.dailyNotesPath || '/kms/10 PMS/11 Daily Notes');\nnode.status({ fill: 'green', shape: 'dot', text: 'Config stored' });\nreturn null;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -340,7 +345,7 @@
         "type": "function",
         "z": "garmin_activities_tab",
         "name": "Format Activity Note",
-        "func": "const a = msg.payload;\nconst activitiesPath = flow.get('actActivitiesPath') || '/kms/10 PMS/Activities';\n\nfunction slugify(s) {\n    return (s || '').toLowerCase()\n        .replace(/[^a-z0-9]+/g, '-')\n        .replace(/^-+|-+$/g, '')\n        .substring(0, 50);\n}\n\nconst date     = a.date || '';\nconst parts    = date.split('-');\nconst yyyy     = parts[0] || 'unknown';\nconst mm       = parts[1] || 'unknown';\nconst sport    = ((a.sport_type || a.type || 'activity').toLowerCase().replace(/[^a-z0-9]/g, '-'));\nconst slug     = slugify(a.name);\nconst noteFile = date.replace(/-/g, '') + '-' + String(a.activityId) + '-' + sport + '-' + slug + '.md';\nmsg.activityPath    = activitiesPath + '/' + yyyy + '/' + mm + '/' + noteFile;\nmsg.activityRelPath = 'Activities/' + yyyy + '/' + mm + '/' + noteFile.replace('.md', '');\nmsg.activityWikiLink = '[[' + msg.activityRelPath + '|' + (a.name || 'Activity') + ']]';\n\n// Build YAML frontmatter (no quotes on time strings)\nconst lines = ['---'];\nlines.push('garmin_activity_id: ' + a.activityId);\nif (a.date)              lines.push('garmin_date: ' + a.date);\nif (a.type)              lines.push('garmin_type: ' + a.type);\nif (a.sport_type)        lines.push('garmin_sport_type: ' + a.sport_type);\nif (a.gear)              lines.push('garmin_gear: ' + a.gear);\nlines.push('garmin_name: ' + (a.name || ''));\nif (a.dist_km != null)       lines.push('garmin_dist_km: ' + a.dist_km);\nif (a.elv_m != null)         lines.push('garmin_elv_m: ' + a.elv_m);\nif (a.elapsed_time)          lines.push('garmin_elapsed_time: ' + a.elapsed_time);\nif (a.moving_time)           lines.push('garmin_moving_time: ' + a.moving_time);\nif (a.start_time)            lines.push('garmin_start_time: ' + a.start_time);\nif (a.day_of_week)           lines.push('garmin_day_of_week: ' + a.day_of_week);\nif (a.speed_kmh != null)     lines.push('garmin_speed_kmh: ' + a.speed_kmh);\nif (a.max_speed_kmh != null) lines.push('garmin_max_speed_kmh: ' + a.max_speed_kmh);\nif (a.avg_hr)              lines.push('garmin_avg_hr: ' + a.avg_hr);\nif (a.max_hr)              lines.push('garmin_max_hr: ' + a.max_hr);\nif (a.calories)            lines.push('garmin_calories: ' + a.calories);\nif (a.elv_loss_m != null)  lines.push('garmin_elv_loss_m: ' + a.elv_loss_m);\nif (a.aerobic_te != null)  lines.push('garmin_aerobic_te: ' + (+a.aerobic_te).toFixed(1));\nif (a.anaerobic_te != null) lines.push('garmin_anaerobic_te: ' + (+a.anaerobic_te).toFixed(1));\nif (a.vo2max)              lines.push('garmin_vo2max: ' + a.vo2max);\nif (a.avg_power)           lines.push('garmin_avg_power: ' + a.avg_power);\nif (a.cadence)             lines.push('garmin_cadence: ' + a.cadence);\nlines.push('garmin_refresh: false');\nlines.push('---');\nlines.push('');\n\n// Display date: \"Monday 16 February 2026\"\nconst MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nlet displayDate = a.date || '';\nif (a.date && parts.length === 3) {\n    const d  = parseInt(parts[2], 10);\n    const mo = parseInt(parts[1], 10) - 1;\n    displayDate = (a.day_of_week ? a.day_of_week + ' ' : '') + d + ' ' + MONTHS[mo] + ' ' + yyyy;\n}\nconst startHHMM = (a.start_time || '').substring(0, 5);\nconst gearSuffix = a.gear ? ' · ' + a.gear : '';\nconst subtitle = '**' + (a.type || 'Activity') + '**'\n    + (displayDate ? ' · ' + displayDate : '')\n    + (startHHMM   ? ' · ' + startHHMM   : '')\n    + gearSuffix;\n\n// Comma-format large integers (e.g. 1319 → \"1,319\")\nfunction fmtInt(n) {\n    return String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n}\n\n// Avg moving speed: dist_km / moving hours\nfunction calcMvgSpeed(dist_km, moving_time) {\n    if (!dist_km || !moving_time) return null;\n    const p = moving_time.split(':').map(Number);\n    if (p.length !== 3) return null;\n    const hrs = p[0] + p[1] / 60 + p[2] / 3600;\n    if (hrs === 0) return null;\n    return +(dist_km / hrs).toFixed(1);\n}\nconst avg_mvg_speed = calcMvgSpeed(a.dist_km, a.moving_time);\n\nlines.push('# ' + (a.name || 'Activity'));\nlines.push('');\nlines.push(subtitle);\nlines.push('');\n\n// Table 1: Distance | Start Time | Moving Time | Elapsed Time\nlines.push('| Distance | Start Time | Moving Time | Elapsed Time |');\nlines.push('| :------: | :--------: | :---------: | :----------: |');\nlines.push('| ' + (a.dist_km != null ? a.dist_km + ' km' : '—')\n    + ' | ' + (startHHMM || '—')\n    + ' | ' + (a.moving_time  || '—')\n    + ' | ' + (a.elapsed_time || '—') + ' |');\nlines.push('');\n\n// Table 2: Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain\nlines.push('| Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain |');\nlines.push('| --------- | ------------- | --------- | --------- |');\nlines.push('| ' + (a.speed_kmh     != null ? a.speed_kmh + ' kph'     : '—')\n    + ' | ' + (avg_mvg_speed != null ? avg_mvg_speed + ' kph' : '—')\n    + ' | ' + (a.max_speed_kmh != null ? a.max_speed_kmh + ' kph' : '—')\n    + ' | ' + (a.elv_m != null ? fmtInt(a.elv_m) + ' m' : '—') + ' |');\nlines.push('');\n\n// Table 3: Avg HR | Max HR (only if present)\nif (a.avg_hr || a.max_hr) {\n    lines.push('| Avg HR | Max HR |');\n    lines.push('| :-----: | :-----: |');\n    lines.push('| ' + (a.avg_hr ? a.avg_hr + ' bpm' : '—')\n        + ' | ' + (a.max_hr ? a.max_hr + ' bpm' : '—') + ' |');\n    lines.push('');\n}\n\n// Training Effect (only if any value >= 1)\nfunction teLabel(v) {\n    if (v < 1) return 'No Benefit';\n    if (v < 2) return 'Minor';\n    if (v < 3) return 'Maintaining';\n    if (v < 4) return 'Improving';\n    if (v < 5) return 'Highly Improving';\n    return 'Overreaching';\n}\nconst showAerobic = a.aerobic_te  != null && a.aerobic_te  >= 1;\nconst showAnaero  = a.anaerobic_te != null && a.anaerobic_te >= 1;\nif (showAerobic || showAnaero) {\n    const teParts = [];\n    if (showAerobic) teParts.push('Aerobic '   + (+a.aerobic_te).toFixed(1)   + ' (' + teLabel(a.aerobic_te)   + ')');\n    if (showAnaero)  teParts.push('Anaerobic ' + (+a.anaerobic_te).toFixed(1) + ' (' + teLabel(a.anaerobic_te) + ')');\n    lines.push('**Training Effect** · ' + teParts.join(' · '));\n    lines.push('');\n}\n\n// Cadence, power, VO2\nconst extraParts = [];\nif (a.cadence)   extraParts.push('**Cadence** ' + a.cadence + ' rpm');\nif (a.avg_power) extraParts.push('**Power** ' + a.avg_power + ' W');\nif (a.vo2max)    extraParts.push('**VO\\u2082 Max** ' + a.vo2max);\nif (extraParts.length > 0) {\n    lines.push(extraParts.join(' · '));\n    lines.push('');\n}\n\n// Leaflet map (only for activities with GPS track)\nif (a.polyline && a.polyline.length >= 2) {\n    const coords = a.polyline;\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [clng, clat] of coords) {\n        if (clat < minLat) minLat = clat; if (clat > maxLat) maxLat = clat;\n        if (clng < minLng) minLng = clng; if (clng > maxLng) maxLng = clng;\n    }\n    const midLat = +((minLat + maxLat) / 2).toFixed(5);\n    const midLng = +((minLng + maxLng) / 2).toFixed(5);\n    const maxSpan = Math.max(maxLat - minLat, maxLng - minLng);\n    const defaultZoom = Math.max(1, Math.min(15, Math.floor(Math.log2(360 / maxSpan))));\n    const jsonFilename = String(a.activityId) + '.json';\n    msg.geojsonContent = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: coords },\n            properties: { stroke: '#0000ff' }\n        }]\n    });\n    msg.geojsonPath = (flow.get('actGeojsonPath') || '/kms/10 PMS/Attachments/Garmin') + '/' + jsonFilename;\n    lines.push('\\`\\`\\`leaflet');\n    lines.push('id: garmin-' + a.activityId);\n    lines.push('geojson: [[' + jsonFilename + ']]');\n    lines.push('marker: start, ' + coords[0][1].toFixed(5) + ', ' + coords[0][0].toFixed(5) + ', Start');\n    lines.push('marker: end, ' + coords[coords.length-1][1].toFixed(5) + ', ' + coords[coords.length-1][0].toFixed(5) + ', End');\n    lines.push('lat: ' + midLat);\n    lines.push('long: ' + midLng);\n    lines.push('width: 80%');\n    lines.push('maxZoom: 18');\n    lines.push('defaultZoom: ' + defaultZoom);\n    lines.push('tileServer:');\n    lines.push(' - https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png|Light');\n    lines.push(' - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png|Dark');\n    lines.push('\\`\\`\\`');\n    lines.push('');\n}\n\nlines.push('[View on Garmin Connect](https://connect.garmin.com/activity/' + a.activityId + ')');\nlines.push('');\n\nmsg.activityNote = lines.join('\\n');\nmsg.activityId   = a.activityId;\nmsg.activityDate = a.date;\nmsg.activityName = a.name || 'Activity';\nmsg.filename     = msg.activityPath;\nreturn msg;\n",
+        "func": "const a = msg.payload;\nconst activitiesPath = flow.get('actActivitiesPath') || '/kms/10 PMS/Activities';\n\nfunction slugify(s) {\n    return (s || '').toLowerCase()\n        .replace(/[^a-z0-9]+/g, '-')\n        .replace(/^-+|-+$/g, '')\n        .substring(0, 50);\n}\n\nconst date     = a.date || '';\nconst parts    = date.split('-');\nconst yyyy     = parts[0] || 'unknown';\nconst mm       = parts[1] || 'unknown';\nconst sport    = ((a.sport_type || a.type || 'activity').toLowerCase().replace(/[^a-z0-9]/g, '-'));\nconst slug     = slugify(a.name);\nconst noteFile = date.replace(/-/g, '') + '-' + String(a.activityId) + '-' + sport + '-' + slug + '.md';\nmsg.activityPath    = activitiesPath + '/' + yyyy + '/' + mm + '/' + noteFile;\nmsg.activityRelPath = 'Activities/' + yyyy + '/' + mm + '/' + noteFile.replace('.md', '');\nmsg.activityWikiLink = '[[' + msg.activityRelPath + '|' + (a.name || 'Activity') + ']]';\n\n// Build YAML frontmatter (no quotes on time strings)\nconst lines = ['---'];\nlines.push('garmin_activity_id: ' + a.activityId);\nif (a.date)              lines.push('garmin_date: ' + a.date);\nif (a.type)              lines.push('garmin_type: ' + a.type);\nif (a.sport_type)        lines.push('garmin_sport_type: ' + a.sport_type);\nif (a.gear)              lines.push('garmin_gear: ' + a.gear);\nlines.push('garmin_name: ' + (a.name || ''));\nif (a.dist_km != null)       lines.push('garmin_dist_km: ' + a.dist_km);\nif (a.elv_m != null)         lines.push('garmin_elv_m: ' + a.elv_m);\nif (a.elapsed_time)          lines.push('garmin_elapsed_time: ' + a.elapsed_time);\nif (a.moving_time)           lines.push('garmin_moving_time: ' + a.moving_time);\nif (a.start_time)            lines.push('garmin_start_time: ' + a.start_time);\nif (a.day_of_week)           lines.push('garmin_day_of_week: ' + a.day_of_week);\nif (a.speed_kmh != null)     lines.push('garmin_speed_kmh: ' + a.speed_kmh);\nif (a.max_speed_kmh != null) lines.push('garmin_max_speed_kmh: ' + a.max_speed_kmh);\nif (a.avg_hr)              lines.push('garmin_avg_hr: ' + a.avg_hr);\nif (a.max_hr)              lines.push('garmin_max_hr: ' + a.max_hr);\nif (a.calories)            lines.push('garmin_calories: ' + a.calories);\nif (a.elv_loss_m != null)  lines.push('garmin_elv_loss_m: ' + a.elv_loss_m);\nif (a.aerobic_te != null)  lines.push('garmin_aerobic_te: ' + (+a.aerobic_te).toFixed(1));\nif (a.anaerobic_te != null) lines.push('garmin_anaerobic_te: ' + (+a.anaerobic_te).toFixed(1));\nif (a.vo2max)              lines.push('garmin_vo2max: ' + a.vo2max);\nif (a.avg_power)           lines.push('garmin_avg_power: ' + a.avg_power);\nif (a.cadence)             lines.push('garmin_cadence: ' + a.cadence);\nlines.push('garmin_refresh: false');\nlines.push('---');\nlines.push('');\n\n// Display date: \"Monday 16 February 2026\"\nconst MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];\nlet displayDate = a.date || '';\nif (a.date && parts.length === 3) {\n    const d  = parseInt(parts[2], 10);\n    const mo = parseInt(parts[1], 10) - 1;\n    displayDate = (a.day_of_week ? a.day_of_week + ' ' : '') + d + ' ' + MONTHS[mo] + ' ' + yyyy;\n}\nconst startHHMM = (a.start_time || '').substring(0, 5);\nconst gearSuffix = a.gear ? ' · ' + a.gear : '';\nconst subtitle = '**' + (a.type || 'Activity') + '**'\n    + (displayDate ? ' · ' + displayDate : '')\n    + (startHHMM   ? ' · ' + startHHMM   : '')\n    + gearSuffix;\n\n// Comma-format large integers (e.g. 1319 → \"1,319\")\nfunction fmtInt(n) {\n    return String(Math.round(n)).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n}\n\n// Avg moving speed: dist_km / moving hours\nfunction calcMvgSpeed(dist_km, moving_time) {\n    if (!dist_km || !moving_time) return null;\n    const p = moving_time.split(':').map(Number);\n    if (p.length !== 3) return null;\n    const hrs = p[0] + p[1] / 60 + p[2] / 3600;\n    if (hrs === 0) return null;\n    return +(dist_km / hrs).toFixed(1);\n}\nconst avg_mvg_speed = calcMvgSpeed(a.dist_km, a.moving_time);\n\nlines.push('# ' + (a.name || 'Activity'));\nlines.push('');\nlines.push(subtitle);\nlines.push('');\n\n// Table 1: Distance | Start Time | Moving Time | Elapsed Time\nlines.push('| Distance | Start Time | Moving Time | Elapsed Time |');\nlines.push('| :------: | :--------: | :---------: | :----------: |');\nlines.push('| ' + (a.dist_km != null ? a.dist_km + ' km' : '—')\n    + ' | ' + (startHHMM || '—')\n    + ' | ' + (a.moving_time  || '—')\n    + ' | ' + (a.elapsed_time || '—') + ' |');\nlines.push('');\n\n// Table 2: Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain\nlines.push('| Avg Speed | Avg Mvg Speed | Max Speed | Elev Gain |');\nlines.push('| --------- | ------------- | --------- | --------- |');\nlines.push('| ' + (a.speed_kmh     != null ? a.speed_kmh + ' kph'     : '—')\n    + ' | ' + (avg_mvg_speed != null ? avg_mvg_speed + ' kph' : '—')\n    + ' | ' + (a.max_speed_kmh != null ? a.max_speed_kmh + ' kph' : '—')\n    + ' | ' + (a.elv_m != null ? fmtInt(a.elv_m) + ' m' : '—') + ' |');\nlines.push('');\n\n// Table 3: Avg HR | Max HR (only if present)\nif (a.avg_hr || a.max_hr) {\n    lines.push('| Avg HR | Max HR |');\n    lines.push('| :-----: | :-----: |');\n    lines.push('| ' + (a.avg_hr ? a.avg_hr + ' bpm' : '—')\n        + ' | ' + (a.max_hr ? a.max_hr + ' bpm' : '—') + ' |');\n    lines.push('');\n}\n\n// Training Effect (only if any value >= 1)\nfunction teLabel(v) {\n    if (v < 1) return 'No Benefit';\n    if (v < 2) return 'Minor';\n    if (v < 3) return 'Maintaining';\n    if (v < 4) return 'Improving';\n    if (v < 5) return 'Highly Improving';\n    return 'Overreaching';\n}\nconst showAerobic = a.aerobic_te  != null && a.aerobic_te  >= 1;\nconst showAnaero  = a.anaerobic_te != null && a.anaerobic_te >= 1;\nif (showAerobic || showAnaero) {\n    const teParts = [];\n    if (showAerobic) teParts.push('Aerobic '   + (+a.aerobic_te).toFixed(1)   + ' (' + teLabel(a.aerobic_te)   + ')');\n    if (showAnaero)  teParts.push('Anaerobic ' + (+a.anaerobic_te).toFixed(1) + ' (' + teLabel(a.anaerobic_te) + ')');\n    lines.push('**Training Effect** · ' + teParts.join(' · '));\n    lines.push('');\n}\n\n// Cadence, power, VO2\nconst extraParts = [];\nif (a.cadence)   extraParts.push('**Cadence** ' + a.cadence + ' rpm');\nif (a.avg_power) extraParts.push('**Power** ' + a.avg_power + ' W');\nif (a.vo2max)    extraParts.push('**VO\\u2082 Max** ' + a.vo2max);\nif (extraParts.length > 0) {\n    lines.push(extraParts.join(' · '));\n    lines.push('');\n}\n\n// Leaflet map (only for activities with GPS track)\nlet leafletLines = null;\nif (a.polyline && a.polyline.length >= 2) {\n    const coords = a.polyline;\n    let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;\n    for (const [clng, clat] of coords) {\n        if (clat < minLat) minLat = clat; if (clat > maxLat) maxLat = clat;\n        if (clng < minLng) minLng = clng; if (clng > maxLng) maxLng = clng;\n    }\n    const midLat = +((minLat + maxLat) / 2).toFixed(5);\n    const midLng = +((minLng + maxLng) / 2).toFixed(5);\n    const maxSpan = Math.max(maxLat - minLat, maxLng - minLng);\n    const defaultZoom = Math.max(1, Math.min(15, Math.floor(Math.log2(360 / maxSpan))));\n    const jsonFilename = String(a.activityId) + '.json';\n    msg.geojsonContent = JSON.stringify({\n        type: 'FeatureCollection',\n        features: [{ type: 'Feature',\n            geometry: { type: 'LineString', coordinates: coords },\n            properties: { stroke: '#0000ff' }\n        }]\n    });\n    msg.geojsonPath = (flow.get('actGeojsonPath') || '/kms/10 PMS/Attachments/Garmin') + '/' + jsonFilename;\n    leafletLines = [\n        '\\`\\`\\`leaflet',\n        'id: garmin-' + a.activityId,\n        'geojson: [[' + jsonFilename + ']]',\n        'marker: start, ' + coords[0][1].toFixed(5) + ', ' + coords[0][0].toFixed(5) + ', Start',\n        'marker: end, ' + coords[coords.length-1][1].toFixed(5) + ', ' + coords[coords.length-1][0].toFixed(5) + ', End',\n        'lat: ' + midLat,\n        'long: ' + midLng,\n        'width: 80%',\n        'maxZoom: 18',\n        'defaultZoom: ' + defaultZoom,\n        'tileServer:',\n        ' - https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png|Light',\n        ' - https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png|Dark',\n        '\\`\\`\\`',\n        ''\n    ];\n    for (const l of leafletLines) lines.push(l);\n}\n\nlines.push('[View on Garmin Connect](https://connect.garmin.com/activity/' + a.activityId + ')');\nlines.push('');\n\n// Daily note entry\nconst emojiMap = {'Ride':'🚴','Run':'🏃','Walk':'🚶','Hike':'⛰️','Swim':'🏊','Strength':'🏋️','Cardio':'🏃','Yoga':'🧘'};\nconst emoji = emojiMap[a.type] || '🏃';\nconst noteLines = [];\nnoteLines.push('- ' + startHHMM + ' ' + emoji + ' ' + msg.activityWikiLink + ' : ' + (a.type || 'Activity') + ' #garmin');\nconst nd1 = [];\nif (a.dist_km != null) nd1.push('**Distance:** ' + a.dist_km + ' km');\nif (a.elv_m   != null) nd1.push('**Elevation:** ' + a.elv_m + ' m');\nif (nd1.length) noteLines.push('\\t- ' + nd1.join(' | '));\nconst nd2 = [];\nif (a.moving_time)         nd2.push('**Moving Time:** ' + a.moving_time);\nif (avg_mvg_speed != null) nd2.push('**Avg Speed:** ' + avg_mvg_speed + ' kph');\nif (nd2.length) noteLines.push('\\t- ' + nd2.join(' | '));\nif (a.avg_hr) {\n    let hrStr = '**Heart Rate:** ' + a.avg_hr;\n    if (a.max_hr) hrStr += ' / ' + a.max_hr;\n    noteLines.push('\\t- ' + hrStr + ' bpm');\n}\nif (leafletLines) {\n    for (const l of leafletLines) noteLines.push(l);\n}\nmsg.noteupdate = noteLines.join('\\n');\nconst [dy, dm, dd2] = (a.date || '').split('-');\nmsg.dateStr = { year: dy || '', month: dm || '', day: dd2 || '' };\nmsg.files = { dailynotefile: dy + '-' + dm + '-' + dd2 + '.md' };\n\nmsg.activityNote = lines.join('\\n');\nmsg.activityId   = a.activityId;\nmsg.activityDate = a.date;\nmsg.activityName = a.name || 'Activity';\nmsg.filename     = msg.activityPath;\nreturn msg;\n",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -513,6 +518,85 @@
         "y": 520,
         "wires": [
             [
+                "act_daily_build"
+            ]
+        ]
+    },
+    {
+        "id": "act_daily_build",
+        "type": "function",
+        "z": "garmin_activities_tab",
+        "name": "Build Daily Note Path",
+        "func": "const dailyPath = flow.get('actDailyNotesPath') || '/kms/10 PMS/11 Daily Notes';\nconst [dy, dm, dd] = (msg.activityDate || '').split('-');\nif (!dy) return null;\nmsg.filename = dailyPath + '/' + dy + '/' + dm + '/' + dy + '-' + dm + '-' + dd + '.md';\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2140,
+        "y": 520,
+        "wires": [
+            [
+                "act_daily_read"
+            ]
+        ]
+    },
+    {
+        "id": "act_daily_read",
+        "type": "file in",
+        "z": "garmin_activities_tab",
+        "name": "Read Daily Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": true,
+        "x": 2320,
+        "y": 520,
+        "wires": [
+            [
+                "act_daily_insert"
+            ]
+        ]
+    },
+    {
+        "id": "act_daily_insert",
+        "type": "function",
+        "z": "garmin_activities_tab",
+        "name": "Insert into Daily Note",
+        "func": "const entry = msg.noteupdate;\nif (!entry) return null;\nconst content = (typeof msg.payload === 'string') ? msg.payload : '';\nif (msg.activityId && content.indexOf(String(msg.activityId)) !== -1) return null;\nconst h = '## Notes';\nconst hi = content.indexOf(h);\nif (hi !== -1) {\n    const after = content.substring(hi + h.length);\n    const m = after.match(/\\n## [^#]/);\n    if (m) {\n        const pos = hi + h.length + m.index;\n        msg.payload = content.substring(0, pos) + '\\n' + entry + content.substring(pos);\n    } else {\n        msg.payload = content.trimEnd() + '\\n' + entry + '\\n';\n    }\n} else {\n    msg.payload = content.trimEnd() + '\\n\\n## Notes\\n' + entry + '\\n';\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2510,
+        "y": 520,
+        "wires": [
+            [
+                "act_daily_write"
+            ]
+        ]
+    },
+    {
+        "id": "act_daily_write",
+        "type": "file",
+        "z": "garmin_activities_tab",
+        "name": "Write Daily Note",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": false,
+        "createDir": true,
+        "overwriteFile": true,
+        "encoding": "none",
+        "x": 2690,
+        "y": 520,
+        "wires": [
+            [
                 "act_done_debug"
             ]
         ]
@@ -530,7 +614,7 @@
         "targetType": "msg",
         "statusVal": "activityName",
         "statusType": "auto",
-        "x": 2120,
+        "x": 2870,
         "y": 520,
         "wires": []
     }
