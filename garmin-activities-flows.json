@@ -322,7 +322,7 @@
         "type": "function",
         "z": "439b184fe3174610",
         "name": "New or Existing?",
-        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds') || {};\nconst id  = String(msg.activityId);\nif (!ids[id]) {\n    // New activity — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\nif (ids[id] !== msg.activityPath) {\n    // Title renamed — record old path so it can be deleted and daily note updated\n    msg.oldActivityPath = ids[id];\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
+        "func": "// Check flow context — have we written this activity before?\nconst ids = flow.get('actWrittenIds', 'file') || {};\nconst id  = String(msg.activityId);\nif (!ids[id]) {\n    // New activity — write immediately\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\nif (ids[id] !== msg.activityPath) {\n    // Title renamed — record old path so it can be deleted and daily note updated\n    msg.oldActivityPath = ids[id];\n    msg.payload  = msg.activityNote;\n    msg.filename = msg.activityPath;\n    return [msg, null];  // output 1: write\n}\n// Same path as before — read the file to check garmin_refresh flag\nreturn [null, msg];  // output 2: check refresh",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -476,7 +476,7 @@
         "type": "function",
         "z": "439b184fe3174610",
         "name": "Track Written",
-        "func": "const ids = flow.get('actWrittenIds') || {};\nids[String(msg.activityId)] = msg.activityPath;\nflow.set('actWrittenIds', ids);\nreturn msg;",
+        "func": "const ids = flow.get('actWrittenIds', 'file') || {};\nids[String(msg.activityId)] = msg.activityPath;\nflow.set('actWrittenIds', ids, 'file');\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -525,7 +525,7 @@
         "type": "function",
         "z": "439b184fe3174610",
         "name": "Delete Old Note",
-        "func": "try {\n    const fs = require('fs');\n    fs.unlinkSync(msg.oldActivityPath);\n} catch (e) {\n    node.warn('Could not delete old note: ' + (e.message || e));\n}\nreturn msg;",
+        "func": "if (!msg.oldActivityPath) return null;\nmsg.payload = msg.oldActivityPath;\nreturn msg;",
         "outputs": 1,
         "timeout": "",
         "noerr": 0,
@@ -533,6 +533,23 @@
         "finalize": "",
         "libs": [],
         "x": 460,
+        "y": 720,
+        "wires": [
+            [
+                "act_delete_old_exec"
+            ]
+        ]
+    },
+    {
+        "id": "act_delete_old_exec",
+        "type": "fs-ops-delete",
+        "z": "439b184fe3174610",
+        "name": "Delete Old Note",
+        "path": "",
+        "pathType": "str",
+        "filename": "payload",
+        "filenameType": "msg",
+        "x": 660,
         "y": 720,
         "wires": [
             [
