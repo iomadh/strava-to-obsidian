@@ -189,6 +189,7 @@ async function fetchActivities(client, args) {
                 vo2max:        a.vO2MaxValue                                         || null,
                 avg_power:     a.avgPower                                            || null,
                 cadence:       Math.round(a.averageBikingCadenceInRevPerMinute || a.averageRunningCadenceInStepsPerMinute || 0) || null,
+                description:   a.description ? String(a.description).trim() : null,
                 polyline:      polyline,
             });
 
