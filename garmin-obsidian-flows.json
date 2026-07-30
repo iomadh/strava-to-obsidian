@@ -358,7 +358,7 @@
         "type": "function",
         "z": "garmin_obsidian_tab",
         "name": "Parse Output",
-        "func": "const raw = (msg.payload || '').trim();\nif (!raw) {\n    node.warn('No output for ' + msg.garminDate + ' — skipping');\n    return [null, msg];  // out2 → skip to next day\n}\nlet data;\ntry { data = JSON.parse(raw); } catch(e) {\n    node.warn('Parse error for ' + msg.garminDate + ': ' + raw.substring(0, 200));\n    return [null, msg];  // out2 → skip to next day\n}\nmsg.sleepData    = data.sleep    || {};\nmsg.hrData       = data.hr       || {};\nmsg.wellnessData = data.wellness || {};\nmsg.weightData   = data.weight   || null;\nreturn [msg, null];",
+        "func": "const raw = (msg.payload || '').trim();\nif (!raw) {\n    node.warn('No output for ' + msg.garminDate + ' — skipping');\n    return [null, msg];  // out2 → skip to next day\n}\nlet data;\ntry { data = JSON.parse(raw); } catch(e) {\n    node.warn('Parse error for ' + msg.garminDate + ': ' + raw.substring(0, 200));\n    return [null, msg];  // out2 → skip to next day\n}\nmsg.sleepData    = data.sleep    || {};\nmsg.hrData       = data.hr       || {};\nmsg.wellnessData = data.wellness || {};\nmsg.weightData   = data.weight   || null;\nmsg.bpData       = data.bp       || null;\nreturn [msg, null];",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
